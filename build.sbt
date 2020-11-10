@@ -5,6 +5,8 @@ version := "0.1"
 scalaVersion := "2.13.3"
 
 libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-actor-typed" % "2.6.10",
+  "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.6.10" % Test,
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "com.typesafe" % "config" % "1.4.0",
