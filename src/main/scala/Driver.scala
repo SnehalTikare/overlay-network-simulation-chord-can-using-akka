@@ -44,7 +44,7 @@ class ChordNode(id: Int) extends Actor {
 
 object Driver {
   def main(args: Array[String]): Unit = {
-    val numNodes = 8
+    val numNodes = 16 //Hello from Rahul
     //val numUsers = 3
     //val numRequests = 2
 
