@@ -21,11 +21,10 @@ class NodeSupervisor(system: ActorSystem, numNodes: Int) extends Actor{
     }
   }
 }
-
-
 class ChordNode(id: Int) extends Actor {
   val nodeId: Int = id
-
+  var nodeHah : String = ""
+  val nodeData : String = "Data in node "+id
   //Generates an m-bit identifier for node using md5 hash function.
   def md5(s: String): String = {
     MessageDigest.getInstance("MD5").digest(s.getBytes).toString
@@ -33,8 +32,8 @@ class ChordNode(id: Int) extends Actor {
 
   override def receive: Receive = {
     case createHash => {
-      val hashVal: String = md5(nodeId.toString)
-      println("Node Id: " + nodeId + " HashVal = " + hashVal)
+      nodeHah = md5(nodeId.toString)
+      println("Node Id: " + nodeId + " HashVal = " + nodeHah)
     }
     case _ => {
       print("Default")
@@ -45,7 +44,7 @@ class ChordNode(id: Int) extends Actor {
 
 object Driver {
   def main(args: Array[String]): Unit = {
-    val numNodes = 3
+    val numNodes = 8
     //val numUsers = 3
     //val numRequests = 2
 
@@ -54,6 +53,5 @@ object Driver {
 
     val nodeSupervisor = actorSystem.actorOf(Props(new NodeSupervisor(actorSystem, numNodes)), name = "NodeActors")
     nodeSupervisor ! "createChordNodes"
-
   }
 }
