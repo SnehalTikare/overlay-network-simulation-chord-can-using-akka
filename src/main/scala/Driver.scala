@@ -2,6 +2,8 @@
 
 import akka.actor._
 import Actors.SupervisorActor
+import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
 
 
 /*
@@ -27,11 +29,11 @@ class ChordNode(id: Int) extends Actor {
 */
 
 
-object Driver {
+object Driver extends LazyLogging {
+  val config: Config = ConfigFactory.load()
+  val numNodes: Int = config.getInt("count.numNodes")
+
   def main(args: Array[String]): Unit = {
-    val numNodes = 8 //Hello from Rahul
-    //val numUsers = 3
-    //val numRequests = 2
     //An ActorSystem is the initial entry point into Akka.
     val actorSystem: ActorSystem = ActorSystem("Actor-System")
 

@@ -15,7 +15,7 @@ class SupervisorActor(system: ActorSystem, numNodes: Int) extends Actor with Laz
       for (x <- 0 until numNodes){
         var nodeId = random.nextInt(Integer.MAX_VALUE)
         actorNodes(x) = system.actorOf(Props(new ServerActor(nodeId)), name = "Node" + x + "-in-chord-ring")
-        //actorNodes(x) ! "createHash"
+        actorNodes(x) ! "default"
       }
       println("Chord nodes created.")
     }
