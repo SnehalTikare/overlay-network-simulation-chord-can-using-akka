@@ -1,26 +1,11 @@
-//object Driver {
-//    def main(args: Array[String]) {
-//      print("Hello World")
-//      print("test")
-//    }
-//}
+
 
 import akka.actor._
 import java.security.MessageDigest
 
-class NodeSupervisor(system: ActorSystem, numNodes: Int) extends Actor{
-  override def receive: Receive = {
-    case createChordNodes => {
-      //ActorRef - Reference that points to the actor instance
-      val actorNodes = new Array[ActorRef](numNodes)
-      for (x <- 0 until numNodes){
-        actorNodes(x) = system.actorOf(Props(new ChordNode(x)), name = "Node" + x + "-in-chord-ring")
-        actorNodes(x) ! "createHash"
-      }
-      println("Chord nodes created.")
-    }
-  }
-}
+import Actors.SupervisorActor
+
+
 class ChordNode(id: Int) extends Actor {
   val nodeId: Int = id
   var nodeHah : String = ""
@@ -51,7 +36,7 @@ object Driver {
     //An ActorSystem is the initial entry point into Akka.
     val actorSystem: ActorSystem = ActorSystem("Actor-System")
 
-    val nodeSupervisor = actorSystem.actorOf(Props(new NodeSupervisor(actorSystem, numNodes)), name = "NodeActors")
+    val nodeSupervisor = actorSystem.actorOf(Props(new SupervisorActor(actorSystem, numNodes)), name = "SupervisorActor")
     nodeSupervisor ! "createChordNodes"
   }
 }
