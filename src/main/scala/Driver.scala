@@ -6,6 +6,7 @@ import java.security.MessageDigest
 import Actors.SupervisorActor
 
 
+/*
 class ChordNode(id: Int) extends Actor {
   val nodeId: Int = id
   var nodeHah : String = ""
@@ -25,6 +26,7 @@ class ChordNode(id: Int) extends Actor {
     }
   }
 }
+*/
 
 
 object Driver {
