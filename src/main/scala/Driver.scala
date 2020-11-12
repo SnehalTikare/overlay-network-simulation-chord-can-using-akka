@@ -1,17 +1,16 @@
 
 
 import akka.actor._
-import java.security.MessageDigest
-
 import Actors.SupervisorActor
+import com.typesafe.config.{Config, ConfigFactory}
 
 
 object Driver {
-  def main(args: Array[String]): Unit = {
-    val numNodes = 16 //Hello from Rahul
-    //val numUsers = 3
-    //val numRequests = 2
 
+  val config: Config = ConfigFactory.load()
+  val numNodes: Int = config.getInt("count.numNodes")
+
+  def main(args: Array[String]): Unit = {
     //An ActorSystem is the initial entry point into Akka.
     val actorSystem: ActorSystem = ActorSystem("Actor-System")
 
