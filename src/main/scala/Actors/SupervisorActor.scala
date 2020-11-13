@@ -1,11 +1,11 @@
 package Actors
+import Actors.ServerActor.{createHashedNodeId, initializeFingerTable}
 import akka.actor._
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 
 class SupervisorActor(system: ActorSystem, numNodes: Int) extends Actor with LazyLogging {
-  val config: Config = ConfigFactory.load()
-  val numComputersInChordRing: Int = config.getInt("count.numComputers")
+  //val config: Config = ConfigFactory.load()
 
   override def receive: Receive = {
     case createChordNodes => {
@@ -14,10 +14,11 @@ class SupervisorActor(system: ActorSystem, numNodes: Int) extends Actor with Laz
       val actorNodes = new Array[ActorRef](numNodes)
       for (x <- 0 until numNodes){
         var nodeId = random.nextInt(Integer.MAX_VALUE)
-        actorNodes(x) = system.actorOf(Props(new ServerActor(nodeId, numNodes)), name = "Node" + x + "-in-chord-ring")
-        actorNodes(x) ! "createHashedNodeId"
+        actorNodes(x) = system.actorOf(Props[ServerActor], name = "Node" + x + "-in-chord-ring")
+        actorNodes(x) ! createHashedNodeId(nodeId)
+        actorNodes(x) ! initializeFingerTable()
       }
-      println("Chord nodes created.")
+      logger.info("Chord nodes created.")
     }
   }
 }
