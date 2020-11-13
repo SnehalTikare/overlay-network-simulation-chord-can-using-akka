@@ -6,16 +6,17 @@ import Utils.Utility
 
 import scala.collection.mutable
 
-class ServerActor extends Actor {
+class ServerActor(id: Int, numNodes: Int) extends Actor {
   private var fingerTable = new mutable.HashMap[Int, FingerTableValue]
-  private var nodeId: Int = -1
-  private var hashedNodeId: String = ""
+  private val nodeId: Int = id
+  private var hashedNodeId: Int = -1
   private var data: ServerData = new ServerData
-  private var hashedData: String = ""
+  private var hashedDataKey: Int = -1
 
   override def receive: Receive = {
     case createHashedNodeId => {
-      hashedNodeId = Utility.md5(nodeId.toString)
+      hashedNodeId = Utility.md5(nodeId.toString, numNodes)
+      println("Node id => " + nodeId + "\t\tHashedNodeId => " + hashedNodeId)
     }
     case _ => {
       print("Default")
@@ -24,7 +25,7 @@ class ServerActor extends Actor {
 
   def setNodeData(nodeData : ServerData, dataId : Int) : Unit = {
     data = nodeData
-    hashedData = Utility.md5(dataId.toString)
+    //hashedDataKey = Utility.md5(dataId.toString)
   }
 }
 

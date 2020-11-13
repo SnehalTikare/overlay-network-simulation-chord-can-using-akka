@@ -14,8 +14,8 @@ class SupervisorActor(system: ActorSystem, numNodes: Int) extends Actor with Laz
       val actorNodes = new Array[ActorRef](numNodes)
       for (x <- 0 until numNodes){
         var nodeId = random.nextInt(Integer.MAX_VALUE)
-        actorNodes(x) = system.actorOf(Props(new ServerActor(nodeId)), name = "Node" + x + "-in-chord-ring")
-        actorNodes(x) ! "default"
+        actorNodes(x) = system.actorOf(Props(new ServerActor(nodeId, numNodes)), name = "Node" + x + "-in-chord-ring")
+        actorNodes(x) ! "createHashedNodeId"
       }
       println("Chord nodes created.")
     }
