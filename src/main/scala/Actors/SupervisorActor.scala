@@ -27,7 +27,7 @@ class SupervisorActor(system: ActorSystem, numNodes: Int) extends Actor with Laz
         logger.info("Node id => " + x + "\t\tHashedNodeId => " + nodeHash)
         actorNodes(x) ! updateHashedNodeId(nodeHash)
         actorNodes(x) ! initializeFingerTable()
-        actorNodes(x) ! joinRing(initialNode)
+        actorNodes(x) ! joinRing(initialNode,firstNode)
       }
       logger.info("Chord nodes created.")
     }
