@@ -1,3 +1,5 @@
 package Data
 
-case class FingerTableValue(id : Int, successorId : Int){}
+import akka.actor.ActorRef
+
+case class FingerTableValue(start : Int, node:ActorRef, successorId : Int)
