@@ -21,10 +21,14 @@ object Utility extends LazyLogging{
   }
 
   def checkrange(begin:Int, end:Int, id:Int):Boolean ={
-    if(begin <=end){
+    //logger.info("Begin =>" + begin + "End=> " + end + "Id => " + id)
+    if(begin < end){
       id>=begin && id < end
-    }else{
-      id>=begin || id<end
+    }
+    else if(begin == end)
+      true
+    else{
+      id>=begin || id < end
     }
   }
 }

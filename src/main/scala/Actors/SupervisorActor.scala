@@ -1,13 +1,17 @@
 package Actors
-import Actors.ServerActor.{initializeFingerTable, joinRing, updateHashedNodeId}
+import Actors.ServerActor._
 import Utils.Utility
 import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
+
 class SupervisorActor(system: ActorSystem, numNodes: Int) extends Actor with LazyLogging {
   //val config: Config = ConfigFactory.load()
-
   override def receive: Receive = {
     case createChordNodes => {
       val random = scala.util.Random
@@ -26,10 +30,26 @@ class SupervisorActor(system: ActorSystem, numNodes: Int) extends Actor with Laz
         actorNodes(x) = system.actorOf(Props(new ServerActor(nodeHash)), name = "Node" + x + "-in-chord-ring")
         logger.info("Node id => " + x + "\t\tHashedNodeId => " + nodeHash)
         actorNodes(x) ! updateHashedNodeId(nodeHash)
-        actorNodes(x) ! initializeFingerTable()
+        //actorNodes(x) ! initializeFingerTable()
         actorNodes(x) ! joinRing(initialNode,firstNode)
+        Thread.sleep(1000)
+        logger.info("Node joined the Ring " + actorNodes(x) + "Hash Value " + nodeHash)
+//        implicit val timeout: Timeout = Timeout(10.seconds)
+//        val future_ring = actorNodes(x) ? joinRing(initialNode,firstNode)
+//        val resultring = Await.result(future_ring, timeout.duration)
+        //actorNodes(x) ! UpdateOthers(nodeHash)
+       // Thread.sleep(10000)
       }
       logger.info("Chord nodes created.")
+      implicit val timeout: Timeout = Timeout(100.seconds)
+      val future = actorNodes(0) ? PrintState
+      val result1 = Await.result(future, timeout.duration)
+      println(" Snapshot " + result1 + " End ")
+      //actorNodes(0) ! PrintState
+      //Thread.sleep(100000)
+//      for( x <- 0 until numNodes){
+//        actorNodes(x) ! Print
+//      }
     }
   }
 }

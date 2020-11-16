@@ -15,6 +15,6 @@ object Driver {
 
     val nodeSupervisor = actorSystem.actorOf(Props(new SupervisorActor(actorSystem, numNodes)), name = "SupervisorActor")
     nodeSupervisor ! "createChordNodes"
-    actorSystem.terminate()
+    //actorSystem.terminate()
   }
 }
