@@ -35,6 +35,7 @@ class ServerActor(hashValue:Int) extends Actor {
     fingerTable += (i -> FingerTableValue(((hashValue + scala.math.pow(2, i)) % numComputers).asInstanceOf[Int],self, hashValue))
     //fingerTable += (((hashedNodeId + math.pow(2, i)) % numComputers).toInt -> hashedNodeId)
   }
+  hashedNodeId = hashValue
   logger.info("Finger Table initialized for node " + hashValue + "Finger Table " + fingerTable )
 
   def closestPrecedingFinger(hash: Int): ActorRef ={

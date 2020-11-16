@@ -5,6 +5,8 @@ import java.lang.Long
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 
+import scala.collection.mutable.ArrayBuffer
+
 object Utility extends LazyLogging{
   val config: Config = ConfigFactory.load()
   val totalSize = config.getInt("count.zero.computers") //2^m
@@ -30,5 +32,15 @@ object Utility extends LazyLogging{
     else{
       id>=begin || id < end
     }
+  }
+  def readCSV():List[(String, String)]={
+    var dataCsv = List[(String, String)]()
+    val bufferedSource = io.Source.fromFile("src/main/resources/IMDB-Movie-Data.csv")
+    for (line <- bufferedSource.getLines.drop(1)) {
+      val cols = line.split(",").map(_.trim)
+      dataCsv:+=(cols(0),cols(1))
+    }
+    bufferedSource.close
+    dataCsv
   }
 }
