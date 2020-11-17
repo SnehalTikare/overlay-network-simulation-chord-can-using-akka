@@ -68,7 +68,6 @@ object Driver extends LazyLogging {
       val future = node ? ChordGlobalState(actorRefHashMap)
       val result = Await.result(future, timeout.duration)
       println(actorRefHashMap(node))
-      println(result)
     }
   }
   def main(args: Array[String]): Unit = {

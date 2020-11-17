@@ -13,8 +13,8 @@ libraryDependencies ++= Seq(
   "org.cloudsimplus" % "cloudsim-plus" % "5.4.3",
   "com.novocode" % "junit-interface" % "0.11" % "test",
   "junit" % "junit" % "4.12" % "test",
-  "org.scalaj" %% "scalaj-http" % "2.4.2",
-  "com.typesafe.akka" %% "akka-stream" % "2.5.26",
+  "org.scalaj" %% "scalaj-http" % "2.6.10",
+  "com.typesafe.akka" %% "akka-stream" % "2.6.10",
   "com.typesafe.akka" %% "akka-http" % "10.1.11"
 
 )
