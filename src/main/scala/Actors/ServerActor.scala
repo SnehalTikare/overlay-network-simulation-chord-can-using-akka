@@ -1,15 +1,13 @@
 package Actors
-
-//import Actors.ServerActor.{Test, UpdateOthers, find_predecessor, find_successor, getNodePos, initializeFingerTable, joinRing, sendHashedNodeId, setPredecessor, setSuccessor, succ, succAndPred, updateHashedNodeId}
 import Actors.ServerActor._
 import Data.{FingerTableValue, ServerData}
 import akka.actor.{Actor, ActorRef}
 import Utils.Utility
 import akka.event.Logging
 import com.typesafe.config.{Config, ConfigFactory}
-import com.typesafe.scalalogging.LazyLogging
 import akka.pattern._
 import akka.util.Timeout
+import com.google.gson.JsonObject
 
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -39,7 +37,7 @@ class ServerActor(hashValue:Int) extends Actor {
   logger.info("Finger Table initialized for node " + hashValue + "Finger Table " + fingerTable )
 
   def closestPrecedingFinger(hash: Int): ActorRef ={
-    for( i <- entriesInFingerTable to 0 by -1) {
+    for( i <- entriesInFingerTable-1 to 0 by -1) {
       {
         if(Utility.checkrange(hashValue, hash, fingerTable(i).successorId))
           return fingerTable(i).node
@@ -184,6 +182,19 @@ class ServerActor(hashValue:Int) extends Actor {
     case Test()=>{
       logger.info("Test  " + hashedNodeId + " " + this.fingerTable)
     }
+    case ChordGlobalState(actorHashMap:mutable.HashMap[ActorRef,Int]) =>
+      val table = new JsonObject
+      for(i <- fingerTable){
+        table.addProperty(i._2.start.toString, i._2.successorId)
+      }
+      val serverVariables = new JsonObject
+      serverVariables.addProperty("ServerNode", hashedNodeId)
+      logger.info("Printing values from hashMap" + actorHashMap.get(successor))
+      serverVariables.addProperty("Successor", actorHashMap(successor))
+      serverVariables.addProperty("Predecessor", actorHashMap(predecessor))
+      serverVariables.add("FingerTable", table)
+      sender ! GlobalState(serverVariables)
+
 
     case find_predecessor(refNodeHash:Int,nodeHash:Int)=>{
       if(Utility.checkrange(refNodeHash, fingerTable.get(0).get.successorId,nodeHash)){
@@ -209,10 +220,7 @@ class ServerActor(hashValue:Int) extends Actor {
     case sendHashedNodeId =>{
       sender ! this.hashedNodeId
     }
-    case PrintState =>{
-      logger.info("Snapshot of finger table")
-      //sender() ! SnapData
-    }
+
     case _ => {
       print("Default")
     }
@@ -242,8 +250,10 @@ object ServerActor {
   sealed case class UpdateFingerTable(n:Int,s:Int, i:Int,snode:ActorRef)
   sealed case class find_predecessor_update(refNodeHash:Int,HashValue:Int,index:Int, node:ActorRef)
   sealed case class UpdateFingerTables_new(position:Int,i:Int,self:ActorRef, hashVal:Int)
-  case object PrintState
   sealed case class StateFingerTable(ft:mutable.HashMap[Int, FingerTableValue])
+
+  case class ChordGlobalState(actorHashMap:mutable.HashMap[ActorRef,Int])
+  case class GlobalState(details:JsonObject)
 
 }
 

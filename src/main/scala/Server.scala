@@ -8,7 +8,6 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 
 
 class Server {
-
   implicit val serverSystem: ActorSystem = ActorSystem("Server")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   var bindings : Future[Http.ServerBinding] = _
