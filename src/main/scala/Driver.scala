@@ -1,6 +1,6 @@
 import java.lang.Math.random
 
-import Actors.ServerActor.{ChordGlobalState, SearchNodeToWrite, Test, joinRing, updateHashedNodeId}
+import Actors.ServerActor.{ChordGlobalState, SearchNodeToWrite, Test, getDataFromNode, joinRing, sendValue, updateHashedNodeId}
 import akka.actor._
 import Actors.{ServerActor, SupervisorActor, UserActor}
 import Utils.Utility
@@ -91,6 +91,23 @@ object Driver extends LazyLogging {
       }
     )
   }
+  def getDataFromChord(serverActorSystem:ActorSystem,chordNodes:List[Int],data:List[(String, String)]):Unit={
+    logger.info("Trying to get rating for the requested movie")
+    //val key = data(1)._1
+    //val key = "Guardians of the Galaxy"
+    data.take(5).foreach(
+      d =>{
+      val key = "Ludo"
+    println("Movie " + key)
+    val keyHash = Utility.sha1(key)
+    implicit val timeout: Timeout = Timeout(10.seconds)
+    val future = getRandomNode(serverActorSystem,chordNodes) ? getDataFromNode(keyHash,key)
+    val result = Await.result(future, timeout.duration).asInstanceOf[sendValue]
+    if(result.value.equals("Movie not found"))
+      println("Requested movie doesn't have rating")
+    else
+      println("IMDB rating for movie " + key+ " is " + result.value)})
+  }
   def main(args: Array[String]): Unit = {
     //An ActorSystem is the initial entry point into Akka.
     logger.info("Creating Server Actor System")
@@ -111,7 +128,7 @@ object Driver extends LazyLogging {
     Thread.sleep(100)
     logger.info("Adding data to chord nodes")
     putDatatoChord(serverActorSystem,chordNodes,data)
-
+    getDataFromChord(serverActorSystem,chordNodes,data)
 
     TerminateSystem(serverActorSystem,userActorSystem)
 

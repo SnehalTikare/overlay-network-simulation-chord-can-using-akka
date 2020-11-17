@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 object Utility extends LazyLogging{
 
@@ -26,6 +27,13 @@ object Utility extends LazyLogging{
     (Integer.parseInt(sb.toString(), 2) % totalSize).toInt
 
   }
+
+  def getRandom(min:Int, max:Int):Int={
+    val rand = new Random
+    val num = min + rand.nextInt((max - min)+1)
+    num
+  }
+
 
   def checkrange(beginInclude:Boolean,begin:Int, end:Int,endInclude:Boolean, id:Int):Boolean ={
     //logger.info("Begin =>" + begin + "End=> " + end + "Id => " + id)

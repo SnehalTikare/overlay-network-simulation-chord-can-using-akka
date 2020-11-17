@@ -112,18 +112,12 @@ class ServerActor(hashValue:Int) extends Actor {
        }
     }
     case UpdateFingerTables_new(previous: Int, index: Int, nodeRef: ActorRef, nodeHash: Int) =>
-      if (nodeRef != self) { // new node is not its own successor (usually happens only when there is only one node in chord)
-        // Check if the hash position determined is in the range of the calling (The successor's) has and it's successor's hash
-        //if (CommonUtils.rangeValidator(leftInclude = false, hashValue, fingerTable(0).getHash, rightInclude = true, previous)) { //I am the node just before N-2^i
-          if(Utility.checkrange(false,hashedNodeId,fingerTable.get(0).get.successorId,true,previous)){
-          // Check if the hash position determined is in the range of the calling (The successor's) has and it's index'th finger's hash
-          //if (CommonUtils.rangeValidator(leftInclude = false, hashValue, fingerTable(index).getHash, rightInclude = false, nodeHash)) {
-            if(Utility.checkrange(false,hashedNodeId,fingerTable.get(index).get.successorId,false,nodeHash)){
-            // Update the finger table of the node
-              logger.info("Index {} of node {} getting updated ", index, nodeRef)
+      if (nodeRef != self) {
+      if(Utility.checkrange(false,hashedNodeId,fingerTable.get(0).get.successorId,true,previous)){
+         if(Utility.checkrange(false,hashedNodeId,fingerTable.get(index).get.successorId,false,nodeHash)){
+             logger.info("Index {} of node {} getting updated ", index, nodeRef)
               fingerTable.get(index).get.node = nodeRef
               fingerTable.get(index).get.successorId = nodeHash
-            // Notify the predecessor to update its index'th position in the finger table if required
             predecessor ! UpdateFingerTables_new(hashValue, index, nodeRef, nodeHash)
           }
         } else {
@@ -234,6 +228,46 @@ class ServerActor(hashValue:Int) extends Actor {
       }
       println(server_data)
     }
+    case getDataFromNode(keyHash:Int,key:String) =>{
+      implicit val timeout: Timeout = Timeout(10.seconds)
+      logger.info("Hash of the movie {} ",keyHash )
+      logger.info("Finding node with the movie in node " + hashedNodeId)
+      logger.info("Movies stored under node {} are {} ", hashedNodeId, server_data)
+      if(server_data.contains(keyHash)) {
+        logger.info("Found hash in node" + hashedNodeId)
+        val map  = server_data(keyHash)
+        logger.info("Found map " + map)
+        if(map.contains(key))
+          sender ! sendValue(map(key))
+        else
+          sender ! sendValue("Movie not found")
+      }
+      else {
+      //logger.info("Printing server data " + server_data)
+        if(Utility.checkrange(false, hashedNodeId,fingerTable.get(0).get.successorId,true,keyHash)){
+          val responsible_node = fingerTable.get(0).get.node ? getDataFromResNode(keyHash,key)
+          val result = Await.result(responsible_node,timeout.duration).asInstanceOf[sendValue]
+          sender ! sendValue(result.value)
+        }
+      else{
+          logger.info("Finding closest preceding finger")
+          val target = closestPrecedingFinger(keyHash)
+
+          val future = target ? getDataFromNode(keyHash,key)
+          val result = Await.result(future, timeout.duration).asInstanceOf[sendValue]
+          sender ! sendValue(result.value)
+        }
+      }
+    }
+    case getDataFromResNode(keyHash:Int,key:String) =>{
+      logger.info("Responsible Node {} ", hashedNodeId)
+      val map  = server_data(keyHash)
+      if(map.contains(key))
+        sender ! sendValue(map(key))
+      else
+        sender ! sendValue("Movie not found")
+    }
+
     case setSuccessor(node:ActorRef,hashValue:Int)=>{
       logger.info("Set successor of " + "Node " + hashedNodeId + " as " + hashValue)
       this.successor = node
@@ -281,6 +315,9 @@ object ServerActor {
   case class GlobalState(details:JsonObject)
   sealed case class SearchNodeToWrite(keyHash:Int,key:String,value:String)
   sealed case class WriteDataToNode(keyHash:Int,key:String,value:String)
+  sealed case class getDataFromNode(keyHash:Int,key:String)
+  sealed case class sendValue(value:String)
+  sealed case class getDataFromResNode(keyHash:Int,key:String)
 
 }
 
