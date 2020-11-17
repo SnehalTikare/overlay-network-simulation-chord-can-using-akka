@@ -1,3 +1,5 @@
+import java.lang.Math.random
+
 import Actors.ServerActor.{ChordGlobalState, Test, joinRing, updateHashedNodeId}
 import akka.actor._
 import Actors.{ServerActor, SupervisorActor, UserActor}
@@ -12,6 +14,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 
+
 object Driver extends LazyLogging {
 
   val config: Config = ConfigFactory.load()
@@ -19,31 +22,33 @@ object Driver extends LazyLogging {
   val numUsers: Int = config.getInt("count.users")
   val actorRefHashMap = new mutable.HashMap[ActorRef, Int]()
   val actorNodes = new Array[ActorRef](numNodes)
-
+  val random = scala.util.Random
   def createActorSystem(systemName:String):ActorSystem ={
     ActorSystem(systemName)
   }
   def createChordRing(system:ActorSystem):List[Int]={
     val NodesHashList = new Array[Int](numNodes)
-
-    val initialNodeHash  = Utility.sha1("n0")
+    var nodeId = random.nextInt(Integer.MAX_VALUE)
+    val initialNodeHash  = Utility.sha1(nodeId.toString)
     NodesHashList(0) = initialNodeHash
     val initialNode = system.actorOf(Props(new ServerActor(initialNodeHash)), name = "Node" + 0 + "-in-chord-ring")
     actorNodes(0) = initialNode
     actorRefHashMap.put(initialNode,initialNodeHash)
     logger.info("First Node id => " + 0 + "\t\tHashedNodeId => " + initialNodeHash)
     for(x <- 1 until numNodes){
-      val nextnodeHash = Utility.sha1("n"+x)
+      var nodeId = random.nextInt(Integer.MAX_VALUE)
+      val nextnodeHash = Utility.sha1(nodeId.toString)
       actorNodes(x) = system.actorOf(Props(new ServerActor(nextnodeHash)), name = "Node" + x + "-in-chord-ring")
       NodesHashList(x) = nextnodeHash
       actorRefHashMap.put(actorNodes(x),nextnodeHash)
       logger.info("Node id => " + x + "\t\tHashedNodeId => " + nextnodeHash)
       Thread.sleep(2)
-      implicit val timeout: Timeout = Timeout(100.seconds)
+      implicit val timeout: Timeout = Timeout(10.seconds)
       val future = actorNodes(x) ? joinRing(initialNode,initialNodeHash)
       val result = Await.result(future, timeout.duration)
       logger.info("Nodes successfully updated after node "+  nextnodeHash + " join "+ result)
       actorNodes(0) ! Test()
+      Thread.sleep(100)
     }
     NodesHashList.toList
   }
@@ -76,6 +81,7 @@ object Driver extends LazyLogging {
     val serverActorSystem= createActorSystem("ServerActorSystem")
     logger.info("Adding nodes to Chord ring")
     val chordNodes = createChordRing(serverActorSystem)
+    Thread.sleep(1000)
     logger.info("Creating User Actor System")
     val userActorSystem = createActorSystem("UserActorSystem")
     logger.info("Creating Users")
@@ -84,6 +90,7 @@ object Driver extends LazyLogging {
     val data = Utility.readCSV()
 //    data.foreach(x =>
 //    println(x._1,x._2))
+    Thread.sleep(1000)
     getGlobalState()
     TerminateSystem(serverActorSystem,userActorSystem)
 

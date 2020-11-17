@@ -39,7 +39,7 @@ class ServerActor(hashValue:Int) extends Actor {
   def closestPrecedingFinger(hash: Int): ActorRef ={
     for( i <- entriesInFingerTable-1 to 0 by -1) {
       {
-        if(Utility.checkrange(true,hashedNodeId, hash,true, fingerTable(i).successorId))
+        if(Utility.checkrange(false,hashedNodeId, hash,false, fingerTable(i).successorId))
           return fingerTable(i).node
       }
     }
@@ -65,7 +65,7 @@ class ServerActor(hashValue:Int) extends Actor {
     }
     case joinRing(refnode:ActorRef, refNodeHash:Int) =>{
       this.existing = refnode //Arbitary Node, refNodeHash - Hash of existing node
-      implicit val timeout: Timeout = Timeout(100.seconds)
+      implicit val timeout: Timeout = Timeout(10.seconds)
       logger.info("Node {} joining the ring",hashedNodeId)
      // val newfuture = existing ? find_successor(refnode,refNodeHash,fingerTable.get(0).get.start)
       val newfuture = existing ? find_predecessor(refNodeHash,fingerTable.get(0).get.start)
@@ -203,7 +203,7 @@ class ServerActor(hashValue:Int) extends Actor {
         logger.info("Sender {} , succ( {} {} {} ", sender,self,fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
         sender ! succ(self, fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
       }else{
-        implicit val timeout: Timeout = Timeout(100.seconds)
+        implicit val timeout: Timeout = Timeout(10.seconds)
         val target = closestPrecedingFinger(nodeHash)
         val future1 = target ? find_predecessor(refNodeHash, nodeHash)
         val result1 = Await.result(future1, timeout.duration).asInstanceOf[succ]
