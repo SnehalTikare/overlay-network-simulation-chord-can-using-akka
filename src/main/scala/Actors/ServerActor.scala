@@ -45,7 +45,6 @@ class ServerActor(hashValue:Int) extends Actor {
     }
     self
   }
-
   def notifyOthers(): Unit = {
     logger.info("Notfying others to update their finger Table")
     for (i <- 0 until entriesInFingerTable - 1) {
@@ -189,7 +188,6 @@ class ServerActor(hashValue:Int) extends Actor {
       }
       val serverVariables = new JsonObject
       serverVariables.addProperty("ServerNode", hashedNodeId)
-      logger.info("Printing values from hashMap" + actorHashMap.get(successor))
       serverVariables.addProperty("Successor", actorHashMap(successor))
       serverVariables.addProperty("Predecessor", actorHashMap(predecessor))
       serverVariables.add("FingerTable", table)
