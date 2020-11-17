@@ -1,6 +1,6 @@
 import java.lang.Math.random
 
-import Actors.ServerActor.{ChordGlobalState, Test, joinRing, updateHashedNodeId}
+import Actors.ServerActor.{ChordGlobalState, SearchNodeToWrite, Test, joinRing, updateHashedNodeId}
 import akka.actor._
 import Actors.{ServerActor, SupervisorActor, UserActor}
 import Utils.Utility
@@ -31,14 +31,14 @@ object Driver extends LazyLogging {
     var nodeId = random.nextInt(Integer.MAX_VALUE)
     val initialNodeHash  = Utility.sha1(nodeId.toString)
     NodesHashList(0) = initialNodeHash
-    val initialNode = system.actorOf(Props(new ServerActor(initialNodeHash)), name = "Node" + 0 + "-in-chord-ring")
+    val initialNode = system.actorOf(Props(new ServerActor(initialNodeHash)), name = initialNodeHash.toString)
     actorNodes(0) = initialNode
     actorRefHashMap.put(initialNode,initialNodeHash)
     logger.info("First Node id => " + 0 + "\t\tHashedNodeId => " + initialNodeHash)
     for(x <- 1 until numNodes){
       var nodeId = random.nextInt(Integer.MAX_VALUE)
       val nextnodeHash = Utility.sha1(nodeId.toString)
-      actorNodes(x) = system.actorOf(Props(new ServerActor(nextnodeHash)), name = "Node" + x + "-in-chord-ring")
+      actorNodes(x) = system.actorOf(Props(new ServerActor(nextnodeHash)), name =nextnodeHash.toString)
       NodesHashList(x) = nextnodeHash
       actorRefHashMap.put(actorNodes(x),nextnodeHash)
       logger.info("Node id => " + x + "\t\tHashedNodeId => " + nextnodeHash)
@@ -75,6 +75,22 @@ object Driver extends LazyLogging {
       println(result)
     }
   }
+
+  def getRandomNode(serverActorSystem:ActorSystem, nlist:List[Int]):ActorSelection={
+    val i = Utility.getRandom(0, nlist.size -1)
+    val node = nlist(i)
+    serverActorSystem.actorSelection("akka://ServerActorSystem/user/" + node)
+  }
+  def putDatatoChord(serverActorSystem:ActorSystem, chordNodes:List[Int],data:List[(String, String)]):Unit={
+    data.take(8).foreach(
+      d =>{
+        val key = d._1
+        val value = d._2
+        val keyHash = Utility.sha1(key)
+        getRandomNode(serverActorSystem,chordNodes) ! SearchNodeToWrite(keyHash,key,value)
+      }
+    )
+  }
   def main(args: Array[String]): Unit = {
     //An ActorSystem is the initial entry point into Akka.
     logger.info("Creating Server Actor System")
@@ -92,6 +108,11 @@ object Driver extends LazyLogging {
 //    println(x._1,x._2))
     Thread.sleep(1000)
     getGlobalState()
+    Thread.sleep(100)
+    logger.info("Adding data to chord nodes")
+    putDatatoChord(serverActorSystem,chordNodes,data)
+
+
     TerminateSystem(serverActorSystem,userActorSystem)
 
 

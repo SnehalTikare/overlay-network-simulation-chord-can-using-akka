@@ -28,6 +28,8 @@ class ServerActor(hashValue:Int) extends Actor {
   private var existing :ActorRef = _
   private var successor: ActorRef = self
   private var predecessor: ActorRef = self
+  val server_data = new mutable.HashMap[Int, mutable.HashMap[String,String]]
+
   logger.info("Initializing Finger table for Node " + hashValue)
   for(i <- 0 until entriesInFingerTable) {
     fingerTable += (i -> FingerTableValue(((hashValue + scala.math.pow(2, i)) % numComputers).asInstanceOf[Int],self, hashValue))
@@ -212,6 +214,26 @@ class ServerActor(hashValue:Int) extends Actor {
       }
 
     }
+
+    case SearchNodeToWrite(keyHash:Int, key:String, value:String) =>{
+      if (Utility.checkrange(false, hashedNodeId, fingerTable.get(0).get.successorId,true, keyHash)) {
+        fingerTable.get(0).get.node ! WriteDataToNode(keyHash,key, value)
+      } else {
+        val target = closestPrecedingFinger(keyHash)
+        target ! SearchNodeToWrite(keyHash,key, value)
+      }
+    }
+    case WriteDataToNode(keyHash:Int,key:String,value:String)=>{
+      logger.info("Writing data ({} {}) with HashKey {} to node {} ", key, value,keyHash, hashedNodeId)
+      if(server_data.contains(keyHash)) {
+        var map = server_data(keyHash)
+        server_data.put(keyHash, map += key -> value)
+      } else {
+        server_data.put(keyHash,  mutable.HashMap(key -> value))
+
+      }
+      println(server_data)
+    }
     case setSuccessor(node:ActorRef,hashValue:Int)=>{
       logger.info("Set successor of " + "Node " + hashedNodeId + " as " + hashValue)
       this.successor = node
@@ -257,6 +279,8 @@ object ServerActor {
 
   case class ChordGlobalState(actorHashMap:mutable.HashMap[ActorRef,Int])
   case class GlobalState(details:JsonObject)
+  sealed case class SearchNodeToWrite(keyHash:Int,key:String,value:String)
+  sealed case class WriteDataToNode(keyHash:Int,key:String,value:String)
 
 }
 
