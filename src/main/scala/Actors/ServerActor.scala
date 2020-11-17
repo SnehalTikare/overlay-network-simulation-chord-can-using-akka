@@ -39,7 +39,7 @@ class ServerActor(hashValue:Int) extends Actor {
   def closestPrecedingFinger(hash: Int): ActorRef ={
     for( i <- entriesInFingerTable-1 to 0 by -1) {
       {
-        if(Utility.checkrange(hashValue, hash, fingerTable(i).successorId))
+        if(Utility.checkrange(true,hashedNodeId, hash,true, fingerTable(i).successorId))
           return fingerTable(i).node
       }
     }
@@ -47,7 +47,7 @@ class ServerActor(hashValue:Int) extends Actor {
   }
   def notifyOthers(): Unit = {
     logger.info("Notfying others to update their finger Table")
-    for (i <- 0 until entriesInFingerTable - 1) {
+    for (i <- 0 until entriesInFingerTable ) {
       val position = (hashValue - BigInt(2).pow(i) + BigInt(2).pow(entriesInFingerTable) + 1) % BigInt(2).pow(entriesInFingerTable)
       successor ! UpdateFingerTables_new(position.toInt, i, self, hashValue)
     }
@@ -64,22 +64,23 @@ class ServerActor(hashValue:Int) extends Actor {
       println(fingerTable)
     }
     case joinRing(refnode:ActorRef, refNodeHash:Int) =>{
-      this.existing = refnode
+      this.existing = refnode //Arbitary Node, refNodeHash - Hash of existing node
       implicit val timeout: Timeout = Timeout(100.seconds)
       logger.info("Node {} joining the ring",hashedNodeId)
      // val newfuture = existing ? find_successor(refnode,refNodeHash,fingerTable.get(0).get.start)
-     val newfuture = existing ? find_predecessor(refNodeHash,fingerTable.get(0).get.start)
+      val newfuture = existing ? find_predecessor(refNodeHash,fingerTable.get(0).get.start)
       val newRes = Await.result(newfuture,timeout.duration).asInstanceOf[succ]
+      logger.info("After 1st Predecessor call for Init for node  " + hashedNodeId + " Return "+ newRes)
       this.predecessor = newRes.n
       this.successor = newRes.succ
-      //predecessor ! setSuccessor(self)
       successor ! setPredecessor(self,hashedNodeId)
-      val future1 = successor ? sendHashedNodeId
-      val successorNodeid = Await.result(future1,timeout.duration).asInstanceOf[Int]
+      predecessor ! setSuccessor(self,hashedNodeId)
+      //predecessor ! setSuccessor(self)
+      //val successorNodeid = Await.result(future1,timeout.duration).asInstanceOf[Int]
       fingerTable.get(0).get.node = successor
-      fingerTable.get(0).get.successorId = successorNodeid
+      fingerTable.get(0).get.successorId = newRes.succId
       for( i <- 0 until entriesInFingerTable-1){
-        if(Utility.checkrange(refNodeHash,fingerTable.get(i).get.successorId,fingerTable.get(i+1).get.start)){
+        if(Utility.checkrange(true,hashedNodeId,fingerTable.get(i).get.successorId,false,fingerTable.get(i+1).get.start)){
           fingerTable.get(i+1).get.node = fingerTable.get(i).get.node
           fingerTable.get(i+1).get.successorId = fingerTable.get(i).get.successorId
         }else{
@@ -112,11 +113,12 @@ class ServerActor(hashValue:Int) extends Actor {
       if (nodeRef != self) { // new node is not its own successor (usually happens only when there is only one node in chord)
         // Check if the hash position determined is in the range of the calling (The successor's) has and it's successor's hash
         //if (CommonUtils.rangeValidator(leftInclude = false, hashValue, fingerTable(0).getHash, rightInclude = true, previous)) { //I am the node just before N-2^i
-          if(Utility.checkrange(hashedNodeId+1,fingerTable.get(0).get.successorId+1,previous)){
+          if(Utility.checkrange(false,hashedNodeId,fingerTable.get(0).get.successorId,true,previous)){
           // Check if the hash position determined is in the range of the calling (The successor's) has and it's index'th finger's hash
           //if (CommonUtils.rangeValidator(leftInclude = false, hashValue, fingerTable(index).getHash, rightInclude = false, nodeHash)) {
-            if(Utility.checkrange(hashedNodeId+1,fingerTable.get(index).get.successorId,nodeHash)){
+            if(Utility.checkrange(false,hashedNodeId,fingerTable.get(index).get.successorId,false,nodeHash)){
             // Update the finger table of the node
+              logger.info("Index {} of node {} getting updated ", index, nodeRef)
               fingerTable.get(index).get.node = nodeRef
               fingerTable.get(index).get.successorId = nodeHash
             // Notify the predecessor to update its index'th position in the finger table if required
@@ -132,7 +134,7 @@ class ServerActor(hashValue:Int) extends Actor {
       logger.info("Find Predecessor update")
       logger.info("Get "+ self)
       logger.info("FingerTable " + fingerTable)
-      if(Utility.checkrange(refNodeHash, fingerTable.get(0).get.successorId,nodeHash)){
+      if(Utility.checkrange(false,refNodeHash, fingerTable.get(0).get.successorId,true,nodeHash)){
         //logger.info("succ(self) "+ succ(self))
         //sender ! succ(self, fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
         println(self + " "+ index.toString)
@@ -146,7 +148,7 @@ class ServerActor(hashValue:Int) extends Actor {
     case UpdateFingerTable(n:Int,s:Int, i:Int,snode:ActorRef) =>{
       logger.info("UpdateFingerTable")
       logger.info("n=> " + n + "s=> " + s + "i=> " + i + "snode=> " + snode )
-          if(Utility.checkrange(n, fingerTable.get(i).get.successorId,s)){
+          if(Utility.checkrange(true,n, fingerTable.get(i).get.successorId,false,s)){
             fingerTable.get(i).get.node = snode
             fingerTable.get(i).get.successorId = s
             predecessor ! UpdateFingerTable(n, s,i, snode)
@@ -155,7 +157,7 @@ class ServerActor(hashValue:Int) extends Actor {
   }
     case getNodePos(refNode:ActorRef,nodeHash:Int) =>{
       logger.info("Begin =>" + fingerTable.get(0).get.start + " End => " + fingerTable.get(0).get.successorId + "ID => " + nodeHash )
-      if(Utility.checkrange(fingerTable.get(0).get.start,fingerTable.get(0).get.successorId,nodeHash)){
+      if(Utility.checkrange(false,fingerTable.get(0).get.start,fingerTable.get(0).get.successorId,true,nodeHash)){
           sender ! succAndPred(self,fingerTable.get(0).get.node )
       }else{
         implicit val timeout: Timeout = Timeout(10.seconds)
@@ -195,20 +197,23 @@ class ServerActor(hashValue:Int) extends Actor {
 
 
     case find_predecessor(refNodeHash:Int,nodeHash:Int)=>{
-      if(Utility.checkrange(refNodeHash, fingerTable.get(0).get.successorId,nodeHash)){
+      logger.info("In predecessor Calling function hash " + refNodeHash + " HashNodeId " + hashedNodeId)
+      if(Utility.checkrange(false,refNodeHash, fingerTable.get(0).get.successorId,true,nodeHash)){
         //logger.info("succ(self) "+ succ(self))
+        logger.info("Sender {} , succ( {} {} {} ", sender,self,fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
         sender ! succ(self, fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
       }else{
         implicit val timeout: Timeout = Timeout(100.seconds)
         val target = closestPrecedingFinger(nodeHash)
         val future1 = target ? find_predecessor(refNodeHash, nodeHash)
         val result1 = Await.result(future1, timeout.duration).asInstanceOf[succ]
-        sender ! (result1.n,result1.succ,result1.succId)
+        logger.info("Else, succ( {} {} {}) ",result1.n,result1.succ,result1.succId)
+        sender ! succ(result1.n,result1.succ,result1.succId)
       }
 
     }
-    case setSuccessor(node:ActorRef)=>{
-      logger.info("Set successor of " + "Node " + hashedNodeId + " as " + node)
+    case setSuccessor(node:ActorRef,hashValue:Int)=>{
+      logger.info("Set successor of " + "Node " + hashedNodeId + " as " + hashValue)
       this.successor = node
     }
     case setPredecessor(node:ActorRef,hashValue:Int) =>{
@@ -237,7 +242,7 @@ object ServerActor {
   sealed case class joinRing(node :ActorRef, hash:Int)
   sealed case class succAndPred(succ:ActorRef, pred:ActorRef)
   sealed case class getNodePos(node : ActorRef, hash:Int)
-  sealed case class setSuccessor(node:ActorRef)
+  sealed case class setSuccessor(node:ActorRef,hashValue:Int)
   sealed case class setPredecessor(node:ActorRef, hashValue:Int)
   case object sendHashedNodeId
   sealed case class find_successor(refNode:ActorRef,refNodeHash:Int,HashValue:Int)
