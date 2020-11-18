@@ -3,22 +3,24 @@ import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
 
-class Server {
+class Server extends LazyLogging{
   implicit val serverSystem: ActorSystem = ActorSystem("Server")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   var bindings : Future[Http.ServerBinding] = _
   def start(serverActorSystem: ActorSystem, chordNodes : List[Int]): Unit = {
     val requestPath = path("ons") {
-      withRequestTimeout(1000.millis)
+      withRequestTimeout(200.seconds)
       concat(
         get {
           parameter("key".as[String]) { key =>
             val response = Utils.DataUtils.getDataFromChord(serverActorSystem,chordNodes,key)
+            logger.info("Response in server {}" , response)
             complete(StatusCodes.Accepted,response)
           }
         },

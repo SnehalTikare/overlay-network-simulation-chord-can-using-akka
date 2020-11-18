@@ -121,7 +121,6 @@ class ServerActor(hashValue:Int) extends Actor {
             predecessor ! UpdateFingerTables_new(hashValue, index, nodeRef, nodeHash)
           }
         } else {
-          // Find the closest preceding finger and ask it to update the finger tables for the particular node
           val target = closestPrecedingFinger(previous)
           target ! UpdateFingerTables_new(previous, index, nodeRef, nodeHash)
         }
@@ -230,15 +229,18 @@ class ServerActor(hashValue:Int) extends Actor {
     }
     case getDataFromNode(keyHash:Int,key:String) =>{
       implicit val timeout: Timeout = Timeout(10.seconds)
-      logger.info("Hash of the movie {} ",keyHash )
-      logger.info("Finding node with the movie in node " + hashedNodeId)
+      logger.info("Hash of the movie {}  is {} ",key, keyHash )
+      logger.info("Finding node with the movie - {} hash{} in node {}",key, keyHash, hashedNodeId)
       logger.info("Movies stored under node {} are {} ", hashedNodeId, server_data)
       if(server_data.contains(keyHash)) {
         logger.info("Found hash in node" + hashedNodeId)
         val map  = server_data(keyHash)
         logger.info("Found map " + map)
         if(map.contains(key))
-          sender ! sendValue(map(key))
+          {
+            logger.info("Found the movie {} {}in node {}", key, keyHash, hashedNodeId)
+            sender ! sendValue(map(key))
+          }
         else
           sender ! sendValue("Movie not found")
       }
@@ -252,7 +254,6 @@ class ServerActor(hashValue:Int) extends Actor {
       else{
           logger.info("Finding closest preceding finger")
           val target = closestPrecedingFinger(keyHash)
-
           val future = target ? getDataFromNode(keyHash,key)
           val result = Await.result(future, timeout.duration).asInstanceOf[sendValue]
           sender ! sendValue(result.value)
@@ -260,12 +261,13 @@ class ServerActor(hashValue:Int) extends Actor {
       }
     }
     case getDataFromResNode(keyHash:Int,key:String) =>{
-      logger.info("Responsible Node {} ", hashedNodeId)
+      logger.info("Responsible Node {} for movie- {} with hash {} ", hashedNodeId, key, keyHash)
+      logger.info("Responsible node's server_data {} ", server_data)
       if(server_data.contains(keyHash)){
         val map = server_data(keyHash)
-
-      if(map.contains(key))
-        sender ! sendValue(map(key))
+      if(map.contains(key)) {
+        logger.info("Found the movie {} {}in node {}", key, keyHash, hashedNodeId)
+        sender ! sendValue(map(key))}
       else
         sender ! sendValue("Movie not found")
     }
