@@ -15,7 +15,10 @@ In this project, we have implemented Chord algorithm using Akka, an actor-based 
 
 ## Steps to run:
 * Clone this repository and navigate to the directory it’s been stored in
-* To run the application, enter the command: sbt clean compile run 
+* To run the application, enter the command: 
+```
+sbt clean compile run 
+```
 * To run the test files, enter the command: sbt clean compile test
 
 ## Code Structure and Flow:
