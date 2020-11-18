@@ -14,12 +14,12 @@ class UserActor(userId: Int) extends Actor {
     case Read(key: String) => {
       val response: HttpResponse[String] = Http("http://localhost:8080/ons").params(("key", key)).asString
       readreq.addAndGet(1)
-      print(response.body)
+      sender ! Response(response.body)
     }
     case Write(key: String, value: String) => {
       val response = Http("http://localhost:8080/ons").params(("key", key), ("value", value)).method("POST").asString
       writereq.addAndGet(1)
-      print(response.body)
+      sender ! Response(response.body)
     }
 
   }
@@ -30,5 +30,7 @@ object UserActor {
   sealed case class Read(key: String)
 
   sealed case class Write(key: String, value: String)
+
+  sealed case class Response(response : String)
 
 }

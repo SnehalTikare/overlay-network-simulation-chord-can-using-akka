@@ -1,9 +1,10 @@
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
 
@@ -11,18 +12,19 @@ class Server {
   implicit val serverSystem: ActorSystem = ActorSystem("Server")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   var bindings : Future[Http.ServerBinding] = _
-  def start(): Unit = {
+  def start(serverActorSystem: ActorSystem, chordNodes : List[Int]): Unit = {
     val requestPath = path("ons") {
+      withRequestTimeout(1000.millis)
       concat(
         get {
           parameter("key".as[String]) { key =>
-            //todo
-            complete(StatusCodes.Accepted)
+            val response = Utils.DataUtils.getDataFromChord(serverActorSystem,chordNodes,key)
+            complete(StatusCodes.Accepted,response)
           }
         },
         post {
           parameter("key".as[String], "value".as[String]) { (key, value) =>
-            //todo
+            val response = Utils.DataUtils.putDataToChord(serverActorSystem,chordNodes,key,value)
             complete(StatusCodes.Accepted)
           }
         }

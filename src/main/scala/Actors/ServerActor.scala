@@ -261,11 +261,17 @@ class ServerActor(hashValue:Int) extends Actor {
     }
     case getDataFromResNode(keyHash:Int,key:String) =>{
       logger.info("Responsible Node {} ", hashedNodeId)
-      val map  = server_data(keyHash)
+      if(server_data.contains(keyHash)){
+        val map = server_data(keyHash)
+
       if(map.contains(key))
         sender ! sendValue(map(key))
       else
         sender ! sendValue("Movie not found")
+    }
+      else{
+        sender ! sendValue("Movie not found")
+      }
     }
 
     case setSuccessor(node:ActorRef,hashValue:Int)=>{

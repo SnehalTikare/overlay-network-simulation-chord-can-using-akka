@@ -53,14 +53,7 @@ object Driver extends LazyLogging {
     NodesHashList.toList
   }
 
-  def createUsers(system:ActorSystem):List[String]={
-    val Users = new Array[String](numUsers)
-    for( i <- 0 until numUsers){
-      Users(i) = "user"+i
-      system.actorOf(Props(new UserActor(i)),Users(i))
-    }
-    Users.toList
-  }
+
   def TerminateSystem(server:ActorSystem,user:ActorSystem):Unit={
     logger.info("Terminating Server and User Actor System")
     server.terminate()
@@ -76,38 +69,6 @@ object Driver extends LazyLogging {
     }
   }
 
-  def getRandomNode(serverActorSystem:ActorSystem, nlist:List[Int]):ActorSelection={
-    val i = Utility.getRandom(0, nlist.size -1)
-    val node = nlist(i)
-    serverActorSystem.actorSelection("akka://ServerActorSystem/user/" + node)
-  }
-  def putDatatoChord(serverActorSystem:ActorSystem, chordNodes:List[Int],data:List[(String, String)]):Unit={
-    data.take(8).foreach(
-      d =>{
-        val key = d._1
-        val value = d._2
-        val keyHash = Utility.sha1(key)
-        getRandomNode(serverActorSystem,chordNodes) ! SearchNodeToWrite(keyHash,key,value)
-      }
-    )
-  }
-  def getDataFromChord(serverActorSystem:ActorSystem,chordNodes:List[Int],data:List[(String, String)]):Unit={
-    logger.info("Trying to get rating for the requested movie")
-    //val key = data(1)._1
-    //val key = "Guardians of the Galaxy"
-    data.take(5).foreach(
-      d =>{
-      val key = "Ludo"
-    println("Movie " + key)
-    val keyHash = Utility.sha1(key)
-    implicit val timeout: Timeout = Timeout(10.seconds)
-    val future = getRandomNode(serverActorSystem,chordNodes) ? getDataFromNode(keyHash,key)
-    val result = Await.result(future, timeout.duration).asInstanceOf[sendValue]
-    if(result.value.equals("Movie not found"))
-      println("Requested movie doesn't have rating")
-    else
-      println("IMDB rating for movie " + key+ " is " + result.value)})
-  }
   def main(args: Array[String]): Unit = {
     //An ActorSystem is the initial entry point into Akka.
     logger.info("Creating Server Actor System")
@@ -115,21 +76,22 @@ object Driver extends LazyLogging {
     logger.info("Adding nodes to Chord ring")
     val chordNodes = createChordRing(serverActorSystem)
     Thread.sleep(1000)
+    val server = new Server
+    server.start(serverActorSystem, chordNodes)
+
     logger.info("Creating User Actor System")
     val userActorSystem = createActorSystem("UserActorSystem")
     logger.info("Creating Users")
-    val users = createUsers(userActorSystem)
+    val users = Utils.SimulationUtils.createUsers(userActorSystem)
+    Utils.SimulationUtils.generateRequests(users, userActorSystem)
     logger.info("Reading Data from CSV")
-    val data = Utility.readCSV()
-//    data.foreach(x =>
-//    println(x._1,x._2))
+
+    Thread.sleep(1000)
+    Utils.SimulationUtils.generateRequests(users, userActorSystem)
     Thread.sleep(1000)
     getGlobalState()
     Thread.sleep(100)
-    logger.info("Adding data to chord nodes")
-    putDatatoChord(serverActorSystem,chordNodes,data)
-    getDataFromChord(serverActorSystem,chordNodes,data)
-
+    server.stop()
     TerminateSystem(serverActorSystem,userActorSystem)
 
 

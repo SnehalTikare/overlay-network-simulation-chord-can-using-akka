@@ -62,4 +62,8 @@ object Utility extends LazyLogging{
     bufferedSource.close
     dataCsv
   }
+
+  def generateRandomBoolean(): Boolean = {
+    new Random().nextBoolean()
+  }
 }
