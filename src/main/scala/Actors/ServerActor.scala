@@ -33,7 +33,6 @@ class ServerActor(hashValue:Int) extends Actor {
   logger.info("Initializing Finger table for Node " + hashValue)
   for(i <- 0 until entriesInFingerTable) {
     fingerTable += (i -> FingerTableValue(((hashValue + scala.math.pow(2, i)) % numComputers).asInstanceOf[Int],self, hashValue))
-    //fingerTable += (((hashedNodeId + math.pow(2, i)) % numComputers).toInt -> hashedNodeId)
   }
   hashedNodeId = hashValue
   logger.info("Finger Table initialized for node " + hashValue + "Finger Table " + fingerTable )
@@ -58,18 +57,11 @@ class ServerActor(hashValue:Int) extends Actor {
     case updateHashedNodeId(nodeId:Int) => {
       hashedNodeId = nodeId
     }
-     case initializeFingerTable() => {
-      for(i <- 0 until entriesInFingerTable) {
-        fingerTable += (i -> FingerTableValue(((hashValue + scala.math.pow(2, i)) % numComputers).asInstanceOf[Int],self, hashValue))
-        //fingerTable += (((hashedNodeId + math.pow(2, i)) % numComputers).toInt -> hashedNodeId)
-      }
-      println(fingerTable)
-    }
+
     case joinRing(refnode:ActorRef, refNodeHash:Int) =>{
       this.existing = refnode //Arbitary Node, refNodeHash - Hash of existing node
       implicit val timeout: Timeout = Timeout(10.seconds)
       logger.info("Node {} joining the ring",hashedNodeId)
-     // val newfuture = existing ? find_successor(refnode,refNodeHash,fingerTable.get(0).get.start)
       val newfuture = existing ? find_predecessor(refNodeHash,fingerTable.get(0).get.start)
       val newRes = Await.result(newfuture,timeout.duration).asInstanceOf[succ]
       logger.info("After 1st Predecessor call for Init for node  " + hashedNodeId + " Return "+ newRes)
@@ -77,8 +69,6 @@ class ServerActor(hashValue:Int) extends Actor {
       this.successor = newRes.succ
       successor ! setPredecessor(self,hashedNodeId)
       predecessor ! setSuccessor(self,hashedNodeId)
-      //predecessor ! setSuccessor(self)
-      //val successorNodeid = Await.result(future1,timeout.duration).asInstanceOf[Int]
       fingerTable.get(0).get.node = successor
       fingerTable.get(0).get.successorId = newRes.succId
       for( i <- 0 until entriesInFingerTable-1){
@@ -95,23 +85,10 @@ class ServerActor(hashValue:Int) extends Actor {
       println("After Updation of node " + hashedNodeId + " Finger Table " + fingerTable)
       logger.info("Node joined the ring, ask others to update their finger table")
       notifyOthers()
-      /*Thread.sleep(1000)
-      println("Updated after notifying others " + hashedNodeId + " "+ fingerTable)*/
       sender() ! "Updated Others"
     }
 
-    case UpdateOthers(nodeHash:Int)=>{
-      logger.info("In UpdateOthers")
-       for(i <- 0 until entriesInFingerTable -1 ){
-         var checkindex  = (nodeHash - Math.pow(2,i).toInt)
-         if(checkindex < 0)
-           checkindex = numComputers - Math.abs(checkindex)
-         logger.info( "i => " + i + " n - 2^i " + checkindex)
-        self ! find_predecessor_update(nodeHash, checkindex ,i, self)
-
-       }
-    }
-    case UpdateFingerTables_new(previous: Int, index: Int, nodeRef: ActorRef, nodeHash: Int) =>
+    case UpdateFingerTables_new(previous: Int, index: Int, nodeRef: ActorRef, nodeHash: Int) =>{
       if (nodeRef != self) {
       if(Utility.checkrange(false,hashedNodeId,fingerTable.get(0).get.successorId,true,previous)){
          if(Utility.checkrange(false,hashedNodeId,fingerTable.get(index).get.successorId,false,nodeHash)){
@@ -125,55 +102,6 @@ class ServerActor(hashValue:Int) extends Actor {
           target ! UpdateFingerTables_new(previous, index, nodeRef, nodeHash)
         }
       }
-    case find_predecessor_update(refNodeHash:Int,nodeHash:Int,index:Int, node:ActorRef)=>{
-      logger.info("Find Predecessor update")
-      logger.info("Get "+ self)
-      logger.info("FingerTable " + fingerTable)
-      if(Utility.checkrange(false,refNodeHash, fingerTable.get(0).get.successorId,true,nodeHash)){
-        //logger.info("succ(self) "+ succ(self))
-        //sender ! succ(self, fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
-        println(self + " "+ index.toString)
-        logger.info("refNodeHash " + refNodeHash)
-        self ! UpdateFingerTable(hashedNodeId,refNodeHash,index,node)
-      }else{
-        val target = closestPrecedingFinger(nodeHash)
-        target ! find_predecessor_update(refNodeHash, nodeHash, index,node)
-      }
-    }
-    case UpdateFingerTable(n:Int,s:Int, i:Int,snode:ActorRef) =>{
-      logger.info("UpdateFingerTable")
-      logger.info("n=> " + n + "s=> " + s + "i=> " + i + "snode=> " + snode )
-          if(Utility.checkrange(true,n, fingerTable.get(i).get.successorId,false,s)){
-            fingerTable.get(i).get.node = snode
-            fingerTable.get(i).get.successorId = s
-            predecessor ! UpdateFingerTable(n, s,i, snode)
-
-          }
-  }
-    case getNodePos(refNode:ActorRef,nodeHash:Int) =>{
-      logger.info("Begin =>" + fingerTable.get(0).get.start + " End => " + fingerTable.get(0).get.successorId + "ID => " + nodeHash )
-      if(Utility.checkrange(false,fingerTable.get(0).get.start,fingerTable.get(0).get.successorId,true,nodeHash)){
-          sender ! succAndPred(self,fingerTable.get(0).get.node )
-      }else{
-        implicit val timeout: Timeout = Timeout(10.seconds)
-        val target = closestPrecedingFinger(nodeHash)
-        val future = target ? getNodePos(refNode, nodeHash)
-        val succandprec = Await.result(future,timeout.duration).asInstanceOf[succAndPred]
-        sender ! (succandprec.pred, succandprec.succ)
-      }
-    }
-    case find_successor(refNode:ActorRef,refNodeHash:Int,nodeHash:Int)=>{
-//      logger.info("Find Successor")
-//     // refNode ! Test()
-//      implicit val timeout: Timeout = Timeout(15.seconds)
-//      //logger.info("Calling  Predecessor" + self + "RefNodeHash=>"+refNodeHash + "NdeHash=>" + nodeHash)
-//      //logger.info("Succ Finger" + fingerTable)
-//      //println("Successor " + fingerTable.get(0).get.successorId)
-//      val future = self ? find_predecessor(fingerTable,refNodeHash,nodeHash)
-//      logger.info("Returned from Predecessor" + future)
-//      val result  = Await.result(future, timeout.duration).asInstanceOf[succ]
-//      logger.info("Result" + result)
-//      sender ! result.succ
     }
     case Test()=>{
       logger.info("Test  " + hashedNodeId + " " + this.fingerTable)
@@ -205,9 +133,7 @@ class ServerActor(hashValue:Int) extends Actor {
         logger.info("Else, succ( {} {} {}) ",result1.n,result1.succ,result1.succId)
         sender ! succ(result1.n,result1.succ,result1.succId)
       }
-
     }
-
     case SearchNodeToWrite(keyHash:Int, key:String, value:String) =>{
       if (Utility.checkrange(false, hashedNodeId, fingerTable.get(0).get.successorId,true, keyHash)) {
         fingerTable.get(0).get.node ! WriteDataToNode(keyHash,key, value)
@@ -293,19 +219,12 @@ class ServerActor(hashValue:Int) extends Actor {
     }
 
   }
-
-  def setNodeData(nodeData : ServerData, dataId : Int) : Unit = {
-    data = nodeData
-    //hashedDataKey = Utility.md5(dataId.toString)
-  }
 }
 
 object ServerActor {
   sealed case class updateHashedNodeId(id: Int)
-  sealed case class initializeFingerTable()
   sealed case class joinRing(node :ActorRef, hash:Int)
   sealed case class succAndPred(succ:ActorRef, pred:ActorRef)
-  sealed case class getNodePos(node : ActorRef, hash:Int)
   sealed case class setSuccessor(node:ActorRef,hashValue:Int)
   sealed case class setPredecessor(node:ActorRef, hashValue:Int)
   case object sendHashedNodeId
@@ -313,9 +232,6 @@ object ServerActor {
   sealed case class find_predecessor(refNodeHash:Int,HashValue:Int)
   sealed case class succ(n:ActorRef,succ:ActorRef, succId:Int)
   sealed case class Test()
-  sealed case class UpdateOthers(nodeHash:Int)
-  sealed case class UpdateFingerTable(n:Int,s:Int, i:Int,snode:ActorRef)
-  sealed case class find_predecessor_update(refNodeHash:Int,HashValue:Int,index:Int, node:ActorRef)
   sealed case class UpdateFingerTables_new(position:Int,i:Int,self:ActorRef, hashVal:Int)
   sealed case class StateFingerTable(ft:mutable.HashMap[Int, FingerTableValue])
 
