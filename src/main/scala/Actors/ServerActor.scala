@@ -29,13 +29,15 @@ class ServerActor(hashValue:Int) extends Actor {
   private var predecessor: ActorRef = self
   val server_data = new mutable.HashMap[Int, mutable.HashMap[String,String]]
 
+  //Initialize the finger table with successor for each finger as itself
   logger.info("Initializing Finger table for Node " + hashValue)
   for(i <- 0 until entriesInFingerTable) {
     fingerTable += (i -> FingerTableValue(((hashValue + scala.math.pow(2, i)) % numComputers).asInstanceOf[Int],self, hashValue))
   }
-  hashedNodeId = hashValue
+  hashedNodeId = hashValue //Hash value of the node
   logger.info("Finger Table initialized for node " + hashValue + "Finger Table " + fingerTable )
 
+  //Find the closest preceding finger for the given id
   def closestPrecedingFinger(hash: Int): ActorRef ={
     for( i <- entriesInFingerTable-1 to 0 by -1) {
       {
@@ -45,6 +47,7 @@ class ServerActor(hashValue:Int) extends Actor {
     }
     self
   }
+  //Update the finger tables of other nodes when the node joins the ring
   def notifyOthers(): Unit = {
     logger.info("Notfying others to update their finger Table")
     for (i <- 0 until entriesInFingerTable ) {
@@ -57,19 +60,24 @@ class ServerActor(hashValue:Int) extends Actor {
       hashedNodeId = nodeId
     }
 
+      //refNode -  Arbitary node used to initialize the local table of the newly joined node
     case joinRing(refnode:ActorRef, refNodeHash:Int) =>{
       this.existing = refnode //Arbitary Node, refNodeHash - Hash of existing node
       implicit val timeout: Timeout = Timeout(10.seconds)
       logger.info("Node {} joining the ring",hashedNodeId)
+      //Find the successor of the newly joined node using the arbitary node
       val newfuture = existing ? find_predecessor(refNodeHash,fingerTable.get(0).get.start)
       val newRes = Await.result(newfuture,timeout.duration).asInstanceOf[succ]
       logger.info("After 1st Predecessor call for Init for node  " + hashedNodeId + " Return "+ newRes)
       this.predecessor = newRes.n
       this.successor = newRes.succ
+      //Set predecessor of the successor as the current node
       successor ! setPredecessor(self,hashedNodeId)
+      //Set successor of the predecessor as the current node
       predecessor ! setSuccessor(self,hashedNodeId)
-      fingerTable.get(0).get.node = successor
+      fingerTable.get(0).get.node = successor //First finger in the finger table refers to the successor
       fingerTable.get(0).get.successorId = newRes.succId
+      //Update other fingers
       for( i <- 0 until entriesInFingerTable-1){
         if(CommonUtils.checkrange(true,hashedNodeId,fingerTable.get(i).get.successorId,false,fingerTable.get(i+1).get.start)){
           fingerTable.get(i+1).get.node = fingerTable.get(i).get.node
@@ -83,10 +91,12 @@ class ServerActor(hashValue:Int) extends Actor {
       }
       println("After Updation of node " + hashedNodeId + " Finger Table " + fingerTable)
       logger.info("Node joined the ring, ask others to update their finger table")
+      //Signal others to update their finger table
       notifyOthers()
       sender() ! "Updated Others"
     }
 
+      //Update the finger table of others nodes in the ring
     case UpdateFingerTables_new(previous: Int, index: Int, nodeRef: ActorRef, nodeHash: Int) =>{
       if (nodeRef != self) {
       if(CommonUtils.checkrange(false,hashedNodeId,fingerTable.get(0).get.successorId,true,previous)){
@@ -105,6 +115,7 @@ class ServerActor(hashValue:Int) extends Actor {
     case Test()=>{
       logger.info("Test  " + hashedNodeId + " " + this.fingerTable)
     }
+      //Store the current state of the actor to a json object
     case ChordGlobalState(actorHashMap:mutable.HashMap[ActorRef,Int]) =>
       val table = new JsonObject
       for(i <- fingerTable){
@@ -117,11 +128,10 @@ class ServerActor(hashValue:Int) extends Actor {
       serverVariables.add("FingerTable", table)
       sender ! GlobalState(serverVariables)
 
-
+    
     case find_predecessor(refNodeHash:Int,nodeHash:Int)=>{
       logger.info("In predecessor Calling function hash " + refNodeHash + " HashNodeId " + hashedNodeId)
       if(CommonUtils.checkrange(false,refNodeHash, fingerTable.get(0).get.successorId,true,nodeHash)){
-        //logger.info("succ(self) "+ succ(self))
         logger.info("Sender {} , succ( {} {} {} ", sender,self,fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
         sender ! succ(self, fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
       }else{

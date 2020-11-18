@@ -1,19 +1,8 @@
-import java.lang.Math.random
 
-import Actors.ServerActor.{ChordGlobalState, SearchNodeToWrite, Test, getDataFromNode, joinRing, sendValue, updateHashedNodeId}
-import akka.actor._
-import Actors.{ServerActor, SupervisorActor, UserActor}
 import Utils.SimulationUtils.config
 import Utils.{CommonUtils, SimulationUtils}
-import akka.pattern.ask
-import akka.util.Timeout
-import com.typesafe.config.{Config, ConfigFactory}
+
 import com.typesafe.scalalogging.{LazyLogging, Logger}
-
-import scala.collection.mutable
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
-
 
 
 object Driver extends LazyLogging {
@@ -53,7 +42,5 @@ object Driver extends LazyLogging {
     server.stop()
 
     SimulationUtils.terminateSystem(serverActorSystem,userActorSystem)
-
-
   }
 }

@@ -1,0 +1,22 @@
+[
+  {
+    "ServerNode": 480348,
+    "Successor": 2784217,
+    "Predecessor": 2784217,
+    "FingerTable": {
+      "0": 480348,
+      "6": 480348,
+      "5": 2784217
+    }
+  },
+  {
+    "ServerNode": 2784217,
+    "Successor": 480348,
+    "Predecessor": 480348,
+    "FingerTable": {
+      "5": 480348,
+      "3": 480348,
+      "2": 480348
+    }
+  }
+]

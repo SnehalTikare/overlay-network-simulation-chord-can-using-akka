@@ -1,17 +1,24 @@
 package Utils
 
-import Actors.ServerActor.{ChordGlobalState, Test, joinRing}
+import Actors.ServerActor.{ChordGlobalState, GlobalState, Test, joinRing}
 import Actors.{ServerActor, UserActor}
 import Actors.UserActor.{Read, Response, Write}
 import akka.actor.{ActorRef, ActorSelection, ActorSystem, Props}
 import akka.pattern.ask
 import akka.util.Timeout
+import com.google.gson.{GsonBuilder, JsonArray}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import java.io.File
+import java.lang.Long
+import java.io._
+import org.apache.commons.io.FileUtils
+
+
 
 object SimulationUtils extends LazyLogging {
   val config: Config = ConfigFactory.load()
@@ -26,15 +33,17 @@ object SimulationUtils extends LazyLogging {
 
   def createChordRing(system:ActorSystem, numNodes : Int):List[Int]={
     val NodesHashList = new Array[Int](numNodes)
-    val nodeId = random.nextInt(Integer.MAX_VALUE)
-    val initialNodeHash  = CommonUtils.sha1(nodeId.toString)
+    //val nodeId = random.nextInt(Integer.MAX_VALUE)
+    val initialnodeId = "node_0"
+    val initialNodeHash  = CommonUtils.sha1(initialnodeId.toString)
     NodesHashList(0) = initialNodeHash
     val initialNode = system.actorOf(Props(new ServerActor(initialNodeHash)), name = initialNodeHash.toString)
     actorNodes(0) = initialNode
     actorRefHashMap.put(initialNode,initialNodeHash)
     logger.info("First Node id => " + 0 + "\t\tHashedNodeId => " + initialNodeHash)
     for(x <- 1 until numNodes){
-      var nodeId = random.nextInt(Integer.MAX_VALUE)
+      //var nodeId = random.nextInt(Integer.MAX_VALUE)
+      val nodeId = "node_"+x
       val nextnodeHash = CommonUtils.sha1(nodeId.toString)
       actorNodes(x) = system.actorOf(Props(new ServerActor(nextnodeHash)), name =nextnodeHash.toString)
       NodesHashList(x) = nextnodeHash
@@ -101,11 +110,20 @@ object SimulationUtils extends LazyLogging {
 
   def getGlobalState():Unit={
     implicit val timeout: Timeout = Timeout(10.seconds)
+    val gson = new GsonBuilder().setPrettyPrinting().create()
+    val nodestate = new JsonArray()
     for(node <- actorNodes) {
       val future = node ? ChordGlobalState(actorRefHashMap)
-      val result = Await.result(future, timeout.duration)
-      println(result)
+      val result = Await.result(future, timeout.duration).asInstanceOf[GlobalState]
+      println(result.details)
+      nodestate.add(result.details)
     }
+    writeToFile(gson.toJson(nodestate))
+  }
+  def writeToFile(data:String):Unit={
+    val path="output/GlobalState.json"
+    logger.info("Writing global state to the file")
+    FileUtils.write(new File(path), data, "UTF-8")
   }
 
 
