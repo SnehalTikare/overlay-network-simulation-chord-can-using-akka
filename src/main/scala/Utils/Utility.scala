@@ -56,6 +56,7 @@ object Utility extends LazyLogging{
     var dataCsv = List[(String, String)]()
     val bufferedSource = io.Source.fromFile("src/main/resources/IMDB-Movie-Data.csv")
     for (line <- bufferedSource.getLines.drop(1)) {
+
       val cols = line.split(",").map(_.trim)
       dataCsv:+=(cols(0),cols(1))
     }

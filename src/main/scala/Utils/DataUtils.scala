@@ -23,13 +23,14 @@ object DataUtils extends LazyLogging {
     var response = ""
     logger.info("Trying to get rating for the requested movie")
     val keyHash = Utility.sha1(key)
-    implicit val timeout: Timeout = Timeout(10.seconds)
+    implicit val timeout: Timeout = Timeout(100.seconds)
     val future = SimulationUtils.getRandomNode(serverActorSystem, chordNodes) ? getDataFromNode(keyHash, key)
     val result = Await.result(future, timeout.duration).asInstanceOf[sendValue]
     if (result.value.equals("Movie not found"))
        response = "Requested movie doesn't have rating"
     else
        response = "IMDB rating for movie " + key + " is " + result.value
+    logger.info("In data utils {} ",response)
     response
   }
 

@@ -39,7 +39,7 @@ object SimulationUtils extends LazyLogging {
   }
 
   def generateRequests(users : List[String], userActorSystem : ActorSystem) : Unit = {
-    implicit val timeout: Timeout = Timeout(10.seconds)
+    implicit val timeout: Timeout = Timeout(100.seconds)
     val numberOfRequests = Utility.getRandom(config.getInt("requests.minimum"),
       config.getInt("requests.maximum"))
       for (i <- 0 to numberOfRequests) {

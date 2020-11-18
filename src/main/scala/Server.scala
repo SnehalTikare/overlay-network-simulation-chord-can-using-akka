@@ -14,8 +14,9 @@ class Server extends LazyLogging{
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   var bindings : Future[Http.ServerBinding] = _
   def start(serverActorSystem: ActorSystem, chordNodes : List[Int]): Unit = {
+
     val requestPath = path("ons") {
-      withRequestTimeout(200.seconds)
+      withRequestTimeout(1000.seconds)
       concat(
         get {
           parameter("key".as[String]) { key =>

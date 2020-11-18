@@ -232,7 +232,7 @@ class ServerActor(hashValue:Int) extends Actor {
       logger.info("Hash of the movie {}  is {} ",key, keyHash )
       logger.info("Finding node with the movie - {} hash{} in node {}",key, keyHash, hashedNodeId)
       logger.info("Movies stored under node {} are {} ", hashedNodeId, server_data)
-      if(server_data.contains(keyHash)) {
+      if(!server_data.isEmpty && server_data.contains(keyHash)) {
         logger.info("Found hash in node" + hashedNodeId)
         val map  = server_data(keyHash)
         logger.info("Found map " + map)
@@ -263,7 +263,7 @@ class ServerActor(hashValue:Int) extends Actor {
     case getDataFromResNode(keyHash:Int,key:String) =>{
       logger.info("Responsible Node {} for movie- {} with hash {} ", hashedNodeId, key, keyHash)
       logger.info("Responsible node's server_data {} ", server_data)
-      if(server_data.contains(keyHash)){
+      if(!server_data.isEmpty && server_data.contains(keyHash)){
         val map = server_data(keyHash)
       if(map.contains(key)) {
         logger.info("Found the movie {} {}in node {}", key, keyHash, hashedNodeId)
