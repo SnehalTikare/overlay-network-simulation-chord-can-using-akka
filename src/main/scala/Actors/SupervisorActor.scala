@@ -1,6 +1,6 @@
 package Actors
 import Actors.ServerActor._
-import Utils.Utility
+import Utils.CommonUtils
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
@@ -17,7 +17,7 @@ class SupervisorActor(system: ActorSystem, numNodes: Int) extends Actor with Laz
       val random = scala.util.Random
       //ActorRef - Reference that points to the actor instance
       val actorNodes = new Array[ActorRef](numNodes)
-      val firstNode  = Utility.sha1("n0")
+      val firstNode  = CommonUtils.sha1("n0")
       val initialNode = system.actorOf(Props(new ServerActor(firstNode)), name = "Node" + 0 + "-in-chord-ring")
       actorNodes(0) = initialNode
       actorNodes(0) ! updateHashedNodeId(firstNode)
@@ -27,7 +27,7 @@ class SupervisorActor(system: ActorSystem, numNodes: Int) extends Actor with Laz
       for (x <- 1 until numNodes){
         //var nodeId = "n" + x
        // var nodeId = random.nextInt(Integer.MAX_VALUE)
-        val nodeHash = Utility.sha1("n"+x)
+        val nodeHash = CommonUtils.sha1("n"+x)
         actorNodes(x) = system.actorOf(Props(new ServerActor(nodeHash)), name = "Node" + x + "-in-chord-ring")
         logger.info("Node id => " + x + "\t\tHashedNodeId => " + nodeHash)
         actorNodes(x) ! updateHashedNodeId(nodeHash)

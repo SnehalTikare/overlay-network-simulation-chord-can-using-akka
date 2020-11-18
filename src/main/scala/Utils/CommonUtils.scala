@@ -1,15 +1,12 @@
 package Utils
 import java.security.MessageDigest
-import java.lang.Long
-
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
-object Utility extends LazyLogging{
+object CommonUtils extends LazyLogging{
 
   val config: Config = ConfigFactory.load()
   val totalSize = config.getInt("count.zero.computers") //2^m
@@ -34,7 +31,6 @@ object Utility extends LazyLogging{
     num
   }
 
-
   def checkrange(beginInclude:Boolean,begin:Int, end:Int,endInclude:Boolean, id:Int):Boolean ={
     //logger.info("Begin =>" + begin + "End=> " + end + "Id => " + id)
     if(begin == end)
@@ -51,17 +47,6 @@ object Utility extends LazyLogging{
       else
         false
     }
-  }
-  def readCSV():List[(String, String)]={
-    var dataCsv = List[(String, String)]()
-    val bufferedSource = io.Source.fromFile("src/main/resources/IMDB-Movie-Data.csv")
-    for (line <- bufferedSource.getLines.drop(1)) {
-
-      val cols = line.split(",").map(_.trim)
-      dataCsv:+=(cols(0),cols(1))
-    }
-    bufferedSource.close
-    dataCsv
   }
 
   def generateRandomBoolean(): Boolean = {

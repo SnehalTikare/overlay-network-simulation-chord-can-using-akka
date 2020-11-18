@@ -12,17 +12,29 @@ import scala.util.Random
 
 object DataUtils extends LazyLogging {
 
-  val dataRecords = Utility.readCSV()
+  val dataRecords = readCSV()
+
+  def readCSV():List[(String, String)]={
+    var dataCsv = List[(String, String)]()
+    val bufferedSource = io.Source.fromFile("src/main/resources/IMDB-Movie-Data.csv")
+    for (line <- bufferedSource.getLines.drop(1)) {
+
+      val cols = line.split(",").map(_.trim)
+      dataCsv:+=(cols(0),cols(1))
+    }
+    bufferedSource.close
+    dataCsv
+  }
+
   def putDataToChord(serverActorSystem: ActorSystem, chordNodes: List[Int], key: String, value: String): Unit = {
-    val keyHash = Utility.sha1(key)
+    val keyHash = CommonUtils.sha1(key)
     SimulationUtils.getRandomNode(serverActorSystem, chordNodes) ! SearchNodeToWrite(keyHash, key, value)
   }
 
-  def getDataFromChord(serverActorSystem: ActorSystem, chordNodes: List[Int], key: String):
-  String = {
+  def getDataFromChord(serverActorSystem: ActorSystem, chordNodes: List[Int], key: String): String = {
     var response = ""
     logger.info("Trying to get rating for the requested movie")
-    val keyHash = Utility.sha1(key)
+    val keyHash = CommonUtils.sha1(key)
     implicit val timeout: Timeout = Timeout(100.seconds)
     val future = SimulationUtils.getRandomNode(serverActorSystem, chordNodes) ? getDataFromNode(keyHash, key)
     val result = Await.result(future, timeout.duration).asInstanceOf[sendValue]

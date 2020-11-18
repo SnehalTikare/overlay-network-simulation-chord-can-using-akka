@@ -28,9 +28,7 @@ class UserActor(userId: Int) extends Actor {
 object UserActor {
 
   sealed case class Read(key: String)
-
   sealed case class Write(key: String, value: String)
-
   sealed case class Response(response : String)
 
 }

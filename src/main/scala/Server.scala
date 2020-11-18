@@ -11,8 +11,9 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 
 class Server extends LazyLogging{
   implicit val serverSystem: ActorSystem = ActorSystem("Server")
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
+
   var bindings : Future[Http.ServerBinding] = _
+
   def start(serverActorSystem: ActorSystem, chordNodes : List[Int]): Unit = {
 
     val requestPath = path("ons") {
@@ -34,6 +35,7 @@ class Server extends LazyLogging{
       )
     }
     bindings = Http().bindAndHandle(requestPath,"localhost",8080)
+    logger.info("Started Akka Http Server")
   }
 
   def stop() :  Unit = {
@@ -42,6 +44,6 @@ class Server extends LazyLogging{
       binding.unbind()
         .onComplete( binding => serverSystem.terminate())
     })
-
+    logger.info("Stopped Akka Http Server")
   }
 }

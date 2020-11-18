@@ -1,8 +1,7 @@
 package Actors
 import Actors.ServerActor._
-import Data.{FingerTableValue, ServerData}
 import akka.actor.{Actor, ActorRef}
-import Utils.Utility
+import Utils.CommonUtils
 import akka.event.Logging
 import com.typesafe.config.{Config, ConfigFactory}
 import akka.pattern._
@@ -40,7 +39,7 @@ class ServerActor(hashValue:Int) extends Actor {
   def closestPrecedingFinger(hash: Int): ActorRef ={
     for( i <- entriesInFingerTable-1 to 0 by -1) {
       {
-        if(Utility.checkrange(false,hashedNodeId, hash,false, fingerTable(i).successorId))
+        if(CommonUtils.checkrange(false,hashedNodeId, hash,false, fingerTable(i).successorId))
           return fingerTable(i).node
       }
     }
@@ -72,7 +71,7 @@ class ServerActor(hashValue:Int) extends Actor {
       fingerTable.get(0).get.node = successor
       fingerTable.get(0).get.successorId = newRes.succId
       for( i <- 0 until entriesInFingerTable-1){
-        if(Utility.checkrange(true,hashedNodeId,fingerTable.get(i).get.successorId,false,fingerTable.get(i+1).get.start)){
+        if(CommonUtils.checkrange(true,hashedNodeId,fingerTable.get(i).get.successorId,false,fingerTable.get(i+1).get.start)){
           fingerTable.get(i+1).get.node = fingerTable.get(i).get.node
           fingerTable.get(i+1).get.successorId = fingerTable.get(i).get.successorId
         }else{
@@ -90,8 +89,8 @@ class ServerActor(hashValue:Int) extends Actor {
 
     case UpdateFingerTables_new(previous: Int, index: Int, nodeRef: ActorRef, nodeHash: Int) =>{
       if (nodeRef != self) {
-      if(Utility.checkrange(false,hashedNodeId,fingerTable.get(0).get.successorId,true,previous)){
-         if(Utility.checkrange(false,hashedNodeId,fingerTable.get(index).get.successorId,false,nodeHash)){
+      if(CommonUtils.checkrange(false,hashedNodeId,fingerTable.get(0).get.successorId,true,previous)){
+         if(CommonUtils.checkrange(false,hashedNodeId,fingerTable.get(index).get.successorId,false,nodeHash)){
              logger.info("Index {} of node {} getting updated ", index, nodeRef)
               fingerTable.get(index).get.node = nodeRef
               fingerTable.get(index).get.successorId = nodeHash
@@ -121,7 +120,7 @@ class ServerActor(hashValue:Int) extends Actor {
 
     case find_predecessor(refNodeHash:Int,nodeHash:Int)=>{
       logger.info("In predecessor Calling function hash " + refNodeHash + " HashNodeId " + hashedNodeId)
-      if(Utility.checkrange(false,refNodeHash, fingerTable.get(0).get.successorId,true,nodeHash)){
+      if(CommonUtils.checkrange(false,refNodeHash, fingerTable.get(0).get.successorId,true,nodeHash)){
         //logger.info("succ(self) "+ succ(self))
         logger.info("Sender {} , succ( {} {} {} ", sender,self,fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
         sender ! succ(self, fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
@@ -135,7 +134,7 @@ class ServerActor(hashValue:Int) extends Actor {
       }
     }
     case SearchNodeToWrite(keyHash:Int, key:String, value:String) =>{
-      if (Utility.checkrange(false, hashedNodeId, fingerTable.get(0).get.successorId,true, keyHash)) {
+      if (CommonUtils.checkrange(false, hashedNodeId, fingerTable.get(0).get.successorId,true, keyHash)) {
         fingerTable.get(0).get.node ! WriteDataToNode(keyHash,key, value)
       } else {
         val target = closestPrecedingFinger(keyHash)
@@ -172,7 +171,7 @@ class ServerActor(hashValue:Int) extends Actor {
       }
       else {
       //logger.info("Printing server data " + server_data)
-        if(Utility.checkrange(false, hashedNodeId,fingerTable.get(0).get.successorId,true,keyHash)){
+        if(CommonUtils.checkrange(false, hashedNodeId,fingerTable.get(0).get.successorId,true,keyHash)){
           val responsible_node = fingerTable.get(0).get.node ? getDataFromResNode(keyHash,key)
           val result = Await.result(responsible_node,timeout.duration).asInstanceOf[sendValue]
           sender ! sendValue(result.value)
@@ -242,6 +241,9 @@ object ServerActor {
   sealed case class getDataFromNode(keyHash:Int,key:String)
   sealed case class sendValue(value:String)
   sealed case class getDataFromResNode(keyHash:Int,key:String)
+  case class ServerData()
+  case class FingerTableValue(var start : Int, var node:ActorRef, var successorId : Int)
+
 
 }
 
