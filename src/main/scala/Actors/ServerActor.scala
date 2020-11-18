@@ -128,7 +128,7 @@ class ServerActor(hashValue:Int) extends Actor {
       serverVariables.add("FingerTable", table)
       sender ! GlobalState(serverVariables)
 
-    
+    //Find the predecessor of node 'nodehash' using the 'refNodeHash'
     case find_predecessor(refNodeHash:Int,nodeHash:Int)=>{
       logger.info("In predecessor Calling function hash " + refNodeHash + " HashNodeId " + hashedNodeId)
       if(CommonUtils.checkrange(false,refNodeHash, fingerTable.get(0).get.successorId,true,nodeHash)){
@@ -143,6 +143,7 @@ class ServerActor(hashValue:Int) extends Actor {
         sender ! succ(result1.n,result1.succ,result1.succId)
       }
     }
+      //Find the node that will store the data with hashed value - keyHash
     case SearchNodeToWrite(keyHash:Int, key:String, value:String) =>{
       if (CommonUtils.checkrange(false, hashedNodeId, fingerTable.get(0).get.successorId,true, keyHash)) {
         fingerTable.get(0).get.node ! WriteDataToNode(keyHash,key, value)
@@ -151,6 +152,7 @@ class ServerActor(hashValue:Int) extends Actor {
         target ! SearchNodeToWrite(keyHash,key, value)
       }
     }
+      //Write the data to the node responsible for the key , successor(k)
     case WriteDataToNode(keyHash:Int,key:String,value:String)=>{
       logger.info("Writing data ({} {}) with HashKey {} to node {} ", key, value,keyHash, hashedNodeId)
       if(server_data.contains(keyHash)) {
