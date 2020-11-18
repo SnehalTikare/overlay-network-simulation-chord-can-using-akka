@@ -12,6 +12,11 @@ object CommonUtils extends LazyLogging{
   val totalSize = config.getInt("count.zero.computers") //2^m
   val hashes = new mutable.HashSet[Int]()
 
+  /**
+   * Generate the hash of the input key
+   * @param input - key (node/data)
+   * @return hash value of the key
+   */
   def sha1(input: String): Int = {
     //Message digest of input string is returned as array of bytes of size 20
     val hashVal = MessageDigest.getInstance("SHA1").digest(input.getBytes("UTF-8"))
@@ -25,11 +30,22 @@ object CommonUtils extends LazyLogging{
     //(Integer.parseInt(sb.toString(), 2) % totalSize).toInt
   }
 
+  /**
+   * Method to generate random number in the given range
+   * @param min - lower range
+   * @param max - upper range
+   * @return random number between [min, max)
+   */
   def getRandom(min:Int, max:Int):Int={
     val rand = new Random
     val num = min + rand.nextInt((max - min)+1)
     num
   }
+
+  /**
+   * Function to check the if a number lies within a given range
+   * @return
+   */
 
   def checkrange(beginInclude:Boolean,begin:Int, end:Int,endInclude:Boolean, id:Int):Boolean ={
     //logger.info("Begin =>" + begin + "End=> " + end + "Id => " + id)
@@ -49,6 +65,10 @@ object CommonUtils extends LazyLogging{
     }
   }
 
+  /**
+   * Generate a random boolean value
+   * @return
+   */
   def generateRandomBoolean(): Boolean = {
     new Random().nextBoolean()
   }
