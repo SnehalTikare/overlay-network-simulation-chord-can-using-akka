@@ -1,52 +1,52 @@
 [
   {
     "User": "user0",
-    "Write Requests: ": 5,
-    "Read Requests: ": 4
+    "Write Requests: ": 1,
+    "Read Requests: ": 0
   },
   {
     "User": "user1",
-    "Write Requests: ": 2,
-    "Read Requests: ": 2
-  },
-  {
-    "User": "user2",
-    "Write Requests: ": 3,
-    "Read Requests: ": 4
-  },
-  {
-    "User": "user3",
-    "Write Requests: ": 2,
+    "Write Requests: ": 0,
     "Read Requests: ": 1
   },
   {
-    "User": "user4",
-    "Write Requests: ": 3,
-    "Read Requests: ": 4
+    "User": "user2",
+    "Write Requests: ": 1,
+    "Read Requests: ": 0
   },
   {
-    "User": "user5",
+    "User": "user3",
     "Write Requests: ": 1,
     "Read Requests: ": 2
   },
   {
-    "User": "user6",
-    "Write Requests: ": 2,
-    "Read Requests: ": 4
+    "User": "user4",
+    "Write Requests: ": 3,
+    "Read Requests: ": 2
   },
   {
-    "User": "user7",
+    "User": "user5",
+    "Write Requests: ": 0,
+    "Read Requests: ": 0
+  },
+  {
+    "User": "user6",
     "Write Requests: ": 0,
     "Read Requests: ": 3
   },
   {
+    "User": "user7",
+    "Write Requests: ": 0,
+    "Read Requests: ": 1
+  },
+  {
     "User": "user8",
-    "Write Requests: ": 3,
+    "Write Requests: ": 1,
     "Read Requests: ": 2
   },
   {
     "User": "user9",
     "Write Requests: ": 1,
-    "Read Requests: ": 3
+    "Read Requests: ": 0
   }
 ]
