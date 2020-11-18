@@ -1,8 +1,8 @@
 package Utils
 
-import Actors.ServerActor.{ChordGlobalState, GlobalState, Test, joinRing}
+import Actors.ServerActor._
 import Actors.{ServerActor, UserActor}
-import Actors.UserActor.{Read, Response, Write}
+import Actors.UserActor._
 import akka.actor.{ActorRef, ActorSelection, ActorSystem, Props}
 import akka.pattern.ask
 import akka.util.Timeout
@@ -14,8 +14,7 @@ import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import java.io.File
-import java.lang.Long
-import java.io._
+
 import org.apache.commons.io.FileUtils
 
 
@@ -26,6 +25,8 @@ object SimulationUtils extends LazyLogging {
   val actorRefHashMap = new mutable.HashMap[ActorRef, Int]()
   val actorNodes = new Array[ActorRef](config.getInt("count.nodes"))
   val random = scala.util.Random
+  val Users = new Array[String](numUsers)
+  val userActors = new Array[ActorRef](numUsers)
 
   def createActorSystem(systemName:String):ActorSystem ={
     ActorSystem(systemName)
@@ -34,7 +35,7 @@ object SimulationUtils extends LazyLogging {
   def createChordRing(system:ActorSystem, numNodes : Int):List[Int]={
     val NodesHashList = new Array[Int](numNodes)
     //val nodeId = random.nextInt(Integer.MAX_VALUE)
-    val initialnodeId = "node_0"
+    val initialnodeId = "Node_0"
     val initialNodeHash  = CommonUtils.sha1(initialnodeId.toString)
     NodesHashList(0) = initialNodeHash
     val initialNode = system.actorOf(Props(new ServerActor(initialNodeHash)), name = initialNodeHash.toString)
@@ -43,7 +44,7 @@ object SimulationUtils extends LazyLogging {
     logger.info("First Node id => " + 0 + "\t\tHashedNodeId => " + initialNodeHash)
     for(x <- 1 until numNodes){
       //var nodeId = random.nextInt(Integer.MAX_VALUE)
-      val nodeId = "node_"+x
+      val nodeId = "Node_"+x
       val nextnodeHash = CommonUtils.sha1(nodeId.toString)
       actorNodes(x) = system.actorOf(Props(new ServerActor(nextnodeHash)), name =nextnodeHash.toString)
       NodesHashList(x) = nextnodeHash
@@ -61,10 +62,9 @@ object SimulationUtils extends LazyLogging {
 
   def createUsers(system:ActorSystem, numUsers : Int):List[String]={
     val config: Config = ConfigFactory.load()
-    val Users = new Array[String](numUsers)
     for( i <- 0 until numUsers){
       Users(i) = "user"+i
-      system.actorOf(Props(new UserActor(i)),Users(i))
+      userActors(i) = system.actorOf(Props(new UserActor(i)),Users(i))
     }
     Users.toList
   }
@@ -90,6 +90,7 @@ object SimulationUtils extends LazyLogging {
         val randomData = DataUtils.getRandomData
         val isWriteRequest = CommonUtils.generateRandomBoolean()
         logger.info("Request  - {} - isWrite - {} - data - {}", i, isWriteRequest,randomData)
+        Thread.sleep(10000)
         if(isWriteRequest){
           val futureResponse = randomUser ? Write(randomData._1,randomData._2)
           val responseString = Await.result(futureResponse, timeout.duration).asInstanceOf[Response]
@@ -115,14 +116,25 @@ object SimulationUtils extends LazyLogging {
     for(node <- actorNodes) {
       val future = node ? ChordGlobalState(actorRefHashMap)
       val result = Await.result(future, timeout.duration).asInstanceOf[GlobalState]
-      println(result.details)
       nodestate.add(result.details)
     }
-    writeToFile(gson.toJson(nodestate))
+    writeToFile(gson.toJson(nodestate),"ChordGlobalState")
   }
-  def writeToFile(data:String):Unit={
-    val path="output/GlobalState.json"
-    logger.info("Writing global state to the file")
+  def getUserGlobalState():Unit={
+    implicit val timeout: Timeout = Timeout(10.seconds)
+    val gson = new GsonBuilder().setPrettyPrinting().create()
+    val userstate = new JsonArray()
+    for(user <- userActors){
+      val future = user ? userGlobalState()
+      val result =  Await.result(future, timeout.duration).asInstanceOf[responseGlobalState]
+      userstate.add(result.details)
+    }
+    writeToFile(gson.toJson(userstate),"UserGlobalState")
+  }
+
+  def writeToFile(data:String,datapath:String):Unit={
+    val path=s"output/$datapath.json"
+    logger.info("Writing {}to the file",datapath)
     FileUtils.write(new File(path), data, "UTF-8")
   }
 

@@ -248,6 +248,7 @@ object ServerActor {
 
   case class ChordGlobalState(actorHashMap:mutable.HashMap[ActorRef,Int])
   case class GlobalState(details:JsonObject)
+
   sealed case class SearchNodeToWrite(keyHash:Int,key:String,value:String)
   sealed case class WriteDataToNode(keyHash:Int,key:String,value:String)
   sealed case class getDataFromNode(keyHash:Int,key:String)

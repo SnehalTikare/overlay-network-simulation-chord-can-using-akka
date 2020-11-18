@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import Actors.UserActor._
 import akka.actor.Actor
+import com.google.gson.JsonObject
 import scalaj.http.{Http, HttpResponse}
 
 class UserActor(userId: Int) extends Actor {
@@ -21,7 +22,13 @@ class UserActor(userId: Int) extends Actor {
       writereq.addAndGet(1)
       sender ! Response(response.body)
     }
-
+    case userGlobalState()=>{
+      val userState = new JsonObject
+      userState.addProperty("User", self.path.name)
+      userState.addProperty("Write Requests: ",writereq)
+      userState.addProperty("Read Requests: ", readreq)
+      sender ! responseGlobalState(userState)
+    }
   }
 }
 
@@ -30,5 +37,8 @@ object UserActor {
   sealed case class Read(key: String)
   sealed case class Write(key: String, value: String)
   sealed case class Response(response : String)
+  sealed case class userGlobalState()
+  sealed case class responseGlobalState(details:JsonObject)
+
 
 }

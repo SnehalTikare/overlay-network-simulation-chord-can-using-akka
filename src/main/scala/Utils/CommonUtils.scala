@@ -16,15 +16,13 @@ object CommonUtils extends LazyLogging{
     //Message digest of input string is returned as array of bytes of size 20
     val hashVal = MessageDigest.getInstance("SHA1").digest(input.getBytes("UTF-8"))
     var sb: StringBuilder = new StringBuilder
-    for (i <- 0 to 2) {
+    for (i <- 0 to 0) {
       sb = sb.append(String.format("%8s", Integer.toBinaryString(hashVal(i) & 0xFF)).replace(' ', '0'))
     }
-    println(sb.toString())
     Integer.parseInt(sb.toString(), 2)
     //val hash = (Integer.parseInt(sb.toString(), 2) % totalSize).toInt
 
     //(Integer.parseInt(sb.toString(), 2) % totalSize).toInt
-
   }
 
   def getRandom(min:Int, max:Int):Int={

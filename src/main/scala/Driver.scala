@@ -37,6 +37,10 @@ object Driver extends LazyLogging {
 
     SimulationUtils.getGlobalState()
 
+    Thread.sleep(1000)
+
+    SimulationUtils.getUserGlobalState()
+
     Thread.sleep(100)
 
     server.stop()

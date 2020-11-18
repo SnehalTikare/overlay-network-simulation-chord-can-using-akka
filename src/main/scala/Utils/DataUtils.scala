@@ -17,12 +17,13 @@ object DataUtils extends LazyLogging {
   def readCSV():List[(String, String)]={
     var dataCsv = List[(String, String)]()
     val bufferedSource = io.Source.fromFile("src/main/resources/IMDB-Movie-Data.csv")
-    for (line <- bufferedSource.getLines.drop(1)) {
+    for (line <- bufferedSource.getLines.drop(900)) {
 
       val cols = line.split(",").map(_.trim)
       dataCsv:+=(cols(0),cols(1))
     }
     bufferedSource.close
+    logger.info("Number of movies and ratings available {} ", dataCsv.size )
     dataCsv
   }
 
