@@ -17,7 +17,7 @@ class Server extends LazyLogging{
   def start(serverActorSystem: ActorSystem, chordNodes : List[Int]): Unit = {
 
     val requestPath = path("ons") {
-      withRequestTimeout(50000.seconds)
+      withRequestTimeout(60000.seconds)
       concat(
         get {
           parameter("key".as[String]) { key =>
