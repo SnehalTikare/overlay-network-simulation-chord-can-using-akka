@@ -19,10 +19,13 @@ In this project, we have implemented Chord algorithm using Akka, an actor-based 
 ```
 sbt clean compile run 
 ```
-* To run the test files, enter the command: sbt clean compile test
+* To run the test files, enter the command:  
+```
+sbt clean compile test
+```
 
 ## Code Structure and Flow:
-## Actors:  
+## Actor package:  
 The Actor package consists of two types of actors used in the system.  
 ## Server Actor:  
 This class represents each server/node in the Chord ring. Each node in our Chord is an actor and the state of these nodes change as new nodes join. The node is created with state variables such as successor, predecessor, and finger table. All these variables have a node reference to self initially.   
@@ -46,7 +49,43 @@ This class depicts a user who queries a database that is hosted in a data center
 
 The main messages defined on this actor are as follows:
 
-* **Read:**
+* **Read:** It makes read requests to the Akka based Web service and sends the key(movie title) in its parameter  
 
-* **Write**
+* **Write:** It makes write requests to the Akka based Web service and sends the key(movie title) and value(movie rating) in its parameter  
+
+## Utils package:  
+## Simulation Utils: 
+The Simulation object has various methods which are used to simulate the Chord Algorithm and generate user requests for read and write operations.
+* **createChordRing:** This method creates all the nodes in the chord ring as Server Actors. The number of nodes to be created is specified in the application.conf file. A reference to all the actor nodes created is stored globally. Once they are created, the nodes are added to the chord ring by using joinRing() message of ServerActor.  
+
+* **createUsers:** This method creates User Actors. The number of user actors to be created is specified in application.conf file.
+
+* **getRandomNode:** It returns a randomly chosen node from the list of created nodes.  
+
+* **getRandomUser:** It returns a randomly chosen user from the list of created users.
+
+* **generateRequests:** The user requests for read and write operations are generated in this function. The number of requests is picked at random between the range of minimum and maximum number specified in config file. These requests are requested by a user which is picked at random. The type of request(read/write) and the data is determined dynamically as well. These requests are then sent via ask pattern to Read/Write messages of User Actor class.
+
+* **getGlobalState:** This method gets the global state of all the nodes in the chord and generates an output file output/ChordGlobalState.json
+
+* **getUserGlobalState:** This method gets the global state of all users and generates an output file called output/UserGlobalState.json  
+
+## Data Utils:
+This class is used to generate the random data which is needed for simulating random user requests of read and write operations. It has methods to read the IMDB-Movie-Data.csv file from the resources folder. It also has methods to gets the data from the chord and to store the data on the chord. It does this by sending appropiate messages to the Server Actor which is randomly selected.
+
+## Common Utils:
+This class has methods to generate hashed value for nodes and keys using SHA1 algorithm. It has methods to generate random values for node ids when they are created. It also has a boolean checkrange() which determines if the value is between the range which is provided.  
+
+## Server: 
+Server class is built using Akka Http dependency. It routes the requests by the users to the nodes and the response from the nodes to the users.
+
+## Results:  
+**Part of a simulation:**  
+![Simulation1 Image](images/SimulationPic1.png)  
+
+**Part of a ChordGlobalState:**  
+![Chord_Global_State Image](images/ChordGlobal.png) 
+
+**Part of a UserGlobalState:**  
+![User_Global_State Image](images/UserGlobalState.png) 
 
