@@ -90,8 +90,10 @@ Server class is built using Akka Http dependency. It routes the requests by the 
 ![Simulation1 Image](images/SimulationPic1.png)  
 
 **Part of a ChordGlobalState:**  
+The below screenshot captures the snapshot of the state of nodes in the chord ring.It captures the details like successor, predecessor and finger-table at the given moment.
 ![Chord_Global_State Image](images/ChordGlobal.png) 
 
-**Part of a UserGlobalState:**  
+**Part of a UserGlobalState:** 
+The below screenshot captures the snapshot of the state of the users. It captures the number of write and read requests made by each user 
 ![User_Global_State Image](images/UserGlobalState.png) 
 
