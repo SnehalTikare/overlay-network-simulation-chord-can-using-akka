@@ -24,7 +24,8 @@ sbt clean compile run
 sbt clean compile test
 ```
 
-Note - If the cloned repository throws 'Class not found exception' after building the project.Create a sbt task and run the task
+Note - If the cloned repository throws 'Class not found exception' after building the project.Create a sbt task and run the task.
+
 * To create the sbt task, go to run -> edit configuration -> click on '+' and select 'sbt task'
 * Name the task and choose the classpath
 * run the created sbt task
