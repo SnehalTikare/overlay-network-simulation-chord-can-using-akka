@@ -9,7 +9,7 @@ In this project, we have implemented Chord algorithm using Akka, an actor-based 
 
 ## Development Environment:
 * Language: Scala v2.12.12
-* IDE: IntelliJ IDEA
+* IDE: IntelliJ IDEA 20.2.3
 * Build Tool: SBT v1.3.9
 * Framework Used: Akka 2.6.10 and Akka HTTP 10.2.0
 
