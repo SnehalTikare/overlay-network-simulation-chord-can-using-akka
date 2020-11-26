@@ -1,0 +1,12 @@
+Hi group 2,
+
+Good job on your simulations. An improvement could be to randomize the nodes on your ring.
+
+Your grade for HW3 is 16%.
+
+Comments:
++3% for the use of typed Akka Behaviors Model.
++3% for a clear documentation with explanation about your implementation
+and how to execute your program.
+
+Abhijeet Mohanty
