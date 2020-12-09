@@ -40,6 +40,7 @@ object SimulationUtils extends LazyLogging {
   case class Envelope(actorId: Int, command: Command)  extends SerializableMessage
 
 
+
   /**
    *
    * @param systemName :Name of the actor system to be created
@@ -64,7 +65,7 @@ object SimulationUtils extends LazyLogging {
     NodesHashList(0) = initialNodeHash
     actorNodes(0)  = ClusterSharding(system).start(
       typeName = 0.toString,
-      entityProps = Props[ServerActor](),
+      entityProps = ServerActor.props(0),
       settings = ClusterShardingSettings(system),
       extractEntityId = ServerActor.entityIdExtractor,
       extractShardId = ServerActor.shardIdExtractor)

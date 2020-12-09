@@ -87,18 +87,22 @@ class ServerActor(hashValue:Int) extends Actor {
         if(CommonUtils.checkrange(true,hashedNodeId,fingerTable.get(i).get.successorId,false,fingerTable.get(i+1).get.start)){
           fingerTable.get(i+1).get.node = fingerTable.get(i).get.node
           fingerTable.get(i+1).get.successorId = fingerTable.get(i).get.successorId
+          //logger.info("Passed if in join ring\n\n")
         }else{
+          //logger.info("In else in join ring \n\n")
           val fingerFuture = existing ? SimulationUtils.Envelope(serverActorIdMap.get(existing),find_predecessor(refNodeHash,fingerTable.get(i+1).get.start))
           val fingerRes = Await.result(fingerFuture,timeout.duration).asInstanceOf[succ]
+          //logger.info("In else in join ring part 2 \n\n")
           fingerTable.get(i+1).get.node = fingerRes.succ
           fingerTable.get(i+1).get.successorId = fingerRes.succId
+
         }
       }
       println("After Updation of node " + hashedNodeId + " Finger Table " + fingerTable)
       logger.info("Node joined the ring, ask others to update their finger table")
       //Signal others to update their finger table
       notifyOthers()
-      sender() ! "Updated Others"
+      sender() ! SimulationUtils.Envelope(serverActorIdMap.get(sender), StringMsg("Updated Others"))
     }
 
       //Update the finger table of others nodes in the ring
@@ -137,13 +141,16 @@ class ServerActor(hashValue:Int) extends Actor {
       if(CommonUtils.checkrange(false,refNodeHash, fingerTable.get(0).get.successorId,true,nodeHash)){
         logger.info("Sender {} , succ( {} {} {} ", sender,self,fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
         sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),succ(self, fingerTable.get(0).get.node,fingerTable.get(0).get.successorId))
+        //logger.info("In find_pred end of if \n")
       }else{
-        implicit val timeout: Timeout = Timeout(10.seconds)
+        //logger.info("In find_pred start of else \n\n")
+        implicit val timeout: Timeout = Timeout(50.seconds)
         val target = closestPrecedingFinger(nodeHash)
-        val future1 = target ? find_predecessor(refNodeHash, nodeHash)
+        val future1 = target ? SimulationUtils.Envelope(serverActorIdMap.get(target),find_predecessor(refNodeHash, nodeHash))
         val result1 = Await.result(future1, timeout.duration).asInstanceOf[succ]
         logger.info("Else, succ( {} {} {}) ",result1.n,result1.succ,result1.succId)
         sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),succ(result1.n,result1.succ,result1.succId))
+        //logger.info("In find_pred end of else \n\n")
       }
     }
       //Find the node that will store the data with hashed value - keyHash
@@ -273,6 +280,6 @@ import SimulationUtils.Envelope
   sealed case class getDataFromResNode(keyHash:Int,key:String) extends Utils.SimulationUtils.Command
   case class ServerData() extends Command
   case class FingerTableValue(var start : Int, var node:ActorRef, var successorId : Int) extends Command
-
+  case class StringMsg(msg: String) extends Command
 }
 
