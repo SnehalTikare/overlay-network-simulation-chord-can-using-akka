@@ -18,7 +18,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream-typed" % "2.6.10",
   "com.typesafe.akka" %% "akka-http" % "10.2.0",
   "commons-lang" % "commons-lang" % "2.6",
-  "commons-io" % "commons-io" % "2.6"
-
-
+  "commons-io" % "commons-io" % "2.6",
+  "com.fasterxml.jackson.core" % "jackson-annotations" % "2.9.6",
+  "com.typesafe.akka" %% "akka-cluster-typed"         % "2.6.10",
+  "com.typesafe.akka" %% "akka-cluster-sharding-typed" %"2.6.10"
 )

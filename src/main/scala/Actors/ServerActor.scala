@@ -1,12 +1,20 @@
 package Actors
 import Actors.ServerActor._
-import akka.actor.{Actor, ActorRef}
-import Utils.CommonUtils
+import Messages.SerializableMessage
+import akka.actor.{Actor, ActorRef, Props}
+import Utils.{CommonUtils, SimulationUtils}
+import akka.cluster.sharding.ShardRegion
+import akka.cluster.sharding.ShardRegion.{ExtractEntityId, ExtractShardId}
+import akka.dispatch.Envelope
 import akka.event.Logging
 import com.typesafe.config.{Config, ConfigFactory}
 import akka.pattern._
+import akka.util.Helpers.Requiring
 import akka.util.Timeout
 import com.google.gson.JsonObject
+import Utils.SimulationUtils.Command
+import Utils.SimulationUtils.serverActorIdMap
+import Utils.SimulationUtils.Envelope
 
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -20,10 +28,7 @@ class ServerActor(hashValue:Int) extends Actor {
   val entriesInFingerTable: Int = (Math.log(numComputers) / Math.log(2)).toInt  // m
 
   private var fingerTable = new mutable.HashMap[Int, FingerTableValue]
-  private val nodeId: Int= -1
   private var hashedNodeId: Int = -1
-  private var data: ServerData = new ServerData
-  private var hashedDataKey: Int = -1
   private var existing :ActorRef = _
   private var successor: ActorRef = self
   private var predecessor: ActorRef = self
@@ -52,7 +57,7 @@ class ServerActor(hashValue:Int) extends Actor {
     logger.info("Notfying others to update their finger Table")
     for (i <- 0 until entriesInFingerTable ) {
       val position = (hashValue - BigInt(2).pow(i) + BigInt(2).pow(entriesInFingerTable) + 1) % BigInt(2).pow(entriesInFingerTable)
-      successor ! UpdateFingerTables_new(position.toInt, i, self, hashValue)
+      successor ! SimulationUtils.Envelope(serverActorIdMap.get(successor),UpdateFingerTables_new(position.toInt, i, self, hashValue))
     }
   }
   override def receive: Receive = {
@@ -66,15 +71,15 @@ class ServerActor(hashValue:Int) extends Actor {
       implicit val timeout: Timeout = Timeout(10.seconds)
       logger.info("Node {} joining the ring",hashedNodeId)
       //Find the successor of the newly joined node using the arbitary node
-      val newfuture = existing ? find_predecessor(refNodeHash,fingerTable.get(0).get.start)
+      val newfuture = existing ? SimulationUtils.Envelope(serverActorIdMap.get(existing),find_predecessor(refNodeHash,fingerTable.get(0).get.start))
       val newRes = Await.result(newfuture,timeout.duration).asInstanceOf[succ]
       logger.info("After 1st Predecessor call for Init for node  " + hashedNodeId + " Return "+ newRes)
       this.predecessor = newRes.n
       this.successor = newRes.succ
       //Set predecessor of the successor as the current node
-      successor ! setPredecessor(self,hashedNodeId)
+      successor ! SimulationUtils.Envelope(serverActorIdMap.get(successor),setPredecessor(self,hashedNodeId))
       //Set successor of the predecessor as the current node
-      predecessor ! setSuccessor(self,hashedNodeId)
+      predecessor ! SimulationUtils.Envelope(serverActorIdMap.get(predecessor),setSuccessor(self,hashedNodeId))
       fingerTable.get(0).get.node = successor //First finger in the finger table refers to the successor
       fingerTable.get(0).get.successorId = newRes.succId
       //Update other fingers
@@ -83,7 +88,7 @@ class ServerActor(hashValue:Int) extends Actor {
           fingerTable.get(i+1).get.node = fingerTable.get(i).get.node
           fingerTable.get(i+1).get.successorId = fingerTable.get(i).get.successorId
         }else{
-          val fingerFuture = existing ? find_predecessor(refNodeHash,fingerTable.get(i+1).get.start)
+          val fingerFuture = existing ? SimulationUtils.Envelope(serverActorIdMap.get(existing),find_predecessor(refNodeHash,fingerTable.get(i+1).get.start))
           val fingerRes = Await.result(fingerFuture,timeout.duration).asInstanceOf[succ]
           fingerTable.get(i+1).get.node = fingerRes.succ
           fingerTable.get(i+1).get.successorId = fingerRes.succId
@@ -104,17 +109,15 @@ class ServerActor(hashValue:Int) extends Actor {
              logger.info("Index {} of node {} getting updated ", index, nodeRef)
               fingerTable.get(index).get.node = nodeRef
               fingerTable.get(index).get.successorId = nodeHash
-            predecessor ! UpdateFingerTables_new(hashValue, index, nodeRef, nodeHash)
+            predecessor ! SimulationUtils.Envelope(serverActorIdMap.get(predecessor),UpdateFingerTables_new(hashValue, index, nodeRef, nodeHash))
           }
         } else {
           val target = closestPrecedingFinger(previous)
-          target ! UpdateFingerTables_new(previous, index, nodeRef, nodeHash)
+          target ! SimulationUtils.Envelope(serverActorIdMap.get(target),UpdateFingerTables_new(previous, index, nodeRef, nodeHash))
         }
       }
     }
-    case Test()=>{
-      logger.info("Test  " + hashedNodeId + " " + this.fingerTable)
-    }
+
       //Store the current state of the actor to a json object
     case ChordGlobalState(actorHashMap:mutable.HashMap[ActorRef,Int]) =>
       val table = new JsonObject
@@ -126,30 +129,30 @@ class ServerActor(hashValue:Int) extends Actor {
       serverVariables.addProperty("Successor", actorHashMap(successor))
       serverVariables.addProperty("Predecessor", actorHashMap(predecessor))
       serverVariables.add("FingerTable", table)
-      sender ! GlobalState(serverVariables)
+      sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),GlobalState(serverVariables))
 
     //Find the predecessor of node 'nodehash' using the 'refNodeHash'
     case find_predecessor(refNodeHash:Int,nodeHash:Int)=>{
       logger.info("In predecessor Calling function hash " + refNodeHash + " HashNodeId " + hashedNodeId)
       if(CommonUtils.checkrange(false,refNodeHash, fingerTable.get(0).get.successorId,true,nodeHash)){
         logger.info("Sender {} , succ( {} {} {} ", sender,self,fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
-        sender ! succ(self, fingerTable.get(0).get.node,fingerTable.get(0).get.successorId)
+        sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),succ(self, fingerTable.get(0).get.node,fingerTable.get(0).get.successorId))
       }else{
         implicit val timeout: Timeout = Timeout(10.seconds)
         val target = closestPrecedingFinger(nodeHash)
         val future1 = target ? find_predecessor(refNodeHash, nodeHash)
         val result1 = Await.result(future1, timeout.duration).asInstanceOf[succ]
         logger.info("Else, succ( {} {} {}) ",result1.n,result1.succ,result1.succId)
-        sender ! succ(result1.n,result1.succ,result1.succId)
+        sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),succ(result1.n,result1.succ,result1.succId))
       }
     }
       //Find the node that will store the data with hashed value - keyHash
     case SearchNodeToWrite(keyHash:Int, key:String, value:String) =>{
       if (CommonUtils.checkrange(false, hashedNodeId, fingerTable.get(0).get.successorId,true, keyHash)) {
-        fingerTable.get(0).get.node ! WriteDataToNode(keyHash,key, value)
+        fingerTable.get(0).get.node ! SimulationUtils.Envelope(serverActorIdMap.get(fingerTable.get(0).get.node),WriteDataToNode(keyHash,key, value))
       } else {
         val target = closestPrecedingFinger(keyHash)
-        target ! SearchNodeToWrite(keyHash,key, value)
+        target ! SimulationUtils.Envelope(serverActorIdMap.get(target),SearchNodeToWrite(keyHash,key, value))
       }
     }
       //Write the data to the node responsible for the key , successor(k)
@@ -176,24 +179,24 @@ class ServerActor(hashValue:Int) extends Actor {
         if(map.contains(key))
           {
             logger.info("Found the movie {} {}in node {}", key, keyHash, hashedNodeId)
-            sender ! sendValue(map(key))
+            sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),sendValue(map(key)))
           }
         else
-          sender ! sendValue("Movie not found")
+          sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),sendValue("Movie not found"))
       }
       else {
       //logger.info("Printing server data " + server_data)
         if(CommonUtils.checkrange(false, hashedNodeId,fingerTable.get(0).get.successorId,true,keyHash)){
           val responsible_node = fingerTable.get(0).get.node ? getDataFromResNode(keyHash,key)
           val result = Await.result(responsible_node,timeout.duration).asInstanceOf[sendValue]
-          sender ! sendValue(result.value)
+          sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),sendValue(result.value))
         }
       else{
           logger.info("Finding closest preceding finger")
           val target = closestPrecedingFinger(keyHash)
-          val future = target ? getDataFromNode(keyHash,key)
+          val future = target ? SimulationUtils.Envelope(serverActorIdMap.get(target),getDataFromNode(keyHash,key))
           val result = Await.result(future, timeout.duration).asInstanceOf[sendValue]
-          sender ! sendValue(result.value)
+          sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),sendValue(result.value))
         }
       }
     }
@@ -204,12 +207,13 @@ class ServerActor(hashValue:Int) extends Actor {
         val map = server_data(keyHash)
       if(map.contains(key)) {
         logger.info("Found the movie {} {}in node {}", key, keyHash, hashedNodeId)
-        sender ! sendValue(map(key))}
+        sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),sendValue(map(key)))
+      }
       else
-        sender ! sendValue("Movie not found")
+        sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),sendValue("Movie not found"))
     }
       else{
-        sender ! sendValue("Movie not found")
+        sender ! SimulationUtils.Envelope(serverActorIdMap.get(sender),sendValue("Movie not found"))
       }
     }
 
@@ -221,9 +225,7 @@ class ServerActor(hashValue:Int) extends Actor {
       logger.info("set predecessor of " + "Node " + hashedNodeId + " as " + hashValue)
       this.predecessor = node
     }
-    case sendHashedNodeId =>{
-      sender ! this.hashedNodeId
-    }
+
 
     case _ => {
       print("Default")
@@ -233,30 +235,44 @@ class ServerActor(hashValue:Int) extends Actor {
 }
 
 object ServerActor {
-  sealed case class updateHashedNodeId(id: Int)
-  sealed case class joinRing(node :ActorRef, hash:Int)
-  sealed case class succAndPred(succ:ActorRef, pred:ActorRef)
-  sealed case class setSuccessor(node:ActorRef,hashValue:Int)
-  sealed case class setPredecessor(node:ActorRef, hashValue:Int)
-  case object sendHashedNodeId
-  sealed case class find_successor(refNode:ActorRef,refNodeHash:Int,HashValue:Int)
-  sealed case class find_predecessor(refNodeHash:Int,HashValue:Int)
-  sealed case class succ(n:ActorRef,succ:ActorRef, succId:Int)
-  sealed case class Test()
-  sealed case class UpdateFingerTables_new(position:Int,i:Int,self:ActorRef, hashVal:Int)
-  sealed case class StateFingerTable(ft:mutable.HashMap[Int, FingerTableValue])
 
-  case class ChordGlobalState(actorHashMap:mutable.HashMap[ActorRef,Int])
-  case class GlobalState(details:JsonObject)
+import SimulationUtils.Envelope
 
-  sealed case class SearchNodeToWrite(keyHash:Int,key:String,value:String)
-  sealed case class WriteDataToNode(keyHash:Int,key:String,value:String)
-  sealed case class getDataFromNode(keyHash:Int,key:String)
-  sealed case class sendValue(value:String)
-  sealed case class getDataFromResNode(keyHash:Int,key:String)
-  case class ServerData()
-  case class FingerTableValue(var start : Int, var node:ActorRef, var successorId : Int)
+  def props(hashValue : Int):Props = Props(new ServerActor(hashValue))
 
+  val entityIdExtractor:ExtractEntityId ={
+    case Envelope(serverActorId,command) => (serverActorId.value.toString,command)
+  }
+
+  val shardIdExtractor:ExtractShardId ={
+    case Envelope(userActorId, _) => Math.abs(userActorId.value.toString.hashCode % 1).toString
+    case ShardRegion.StartEntity(entityId) =>Math.abs(entityId.hashCode % 1).toString
+  }
+
+  sealed case class joinRing(node :ActorRef, hash:Int) extends Command
+  sealed case class UpdateFingerTables_new(position:Int,i:Int,self:ActorRef, hashVal:Int) extends Command
+  case class ChordGlobalState(actorHashMap:mutable.HashMap[ActorRef,Int]) extends Command
+  sealed case class find_successor(refNode:ActorRef,refNodeHash:Int,HashValue:Int) extends Command
+  sealed case class find_predecessor(refNodeHash:Int,HashValue:Int) extends Command
+
+
+  sealed case class updateHashedNodeId(id: Int) extends Command
+  sealed case class succAndPred(succ:ActorRef, pred:ActorRef) extends Command
+  sealed case class setSuccessor(node:ActorRef,hashValue:Int) extends Command
+  sealed case class setPredecessor(node:ActorRef, hashValue:Int) extends Command
+
+  sealed case class succ(n:ActorRef,succ:ActorRef, succId:Int) extends Command
+  sealed case class StateFingerTable(ft:mutable.HashMap[Int, FingerTableValue]) extends Command
+
+  case class GlobalState(details:JsonObject) extends Command
+
+  sealed case class SearchNodeToWrite(keyHash:Int,key:String,value:String) extends Command
+  sealed case class WriteDataToNode(keyHash:Int,key:String,value:String) extends Command
+  sealed case class getDataFromNode(keyHash:Int,key:String) extends Command
+  sealed case class sendValue(value:String) extends Command
+  sealed case class getDataFromResNode(keyHash:Int,key:String) extends Utils.SimulationUtils.Command
+  case class ServerData() extends Command
+  case class FingerTableValue(var start : Int, var node:ActorRef, var successorId : Int) extends Command
 
 }
 
