@@ -62,9 +62,9 @@ The main messages defined on this actor are as follows:
 ## Utils package:  
 ## Simulation Utils: 
 The Simulation object has various methods which are used to simulate the Chord Algorithm and generate user requests for read and write operations.
-* **createChordRing:** This method creates all the nodes in the chord ring as Server Actors. The number of nodes to be created is specified in the application.conf file. A reference to all the actor nodes created is stored globally. Once they are created, the nodes are added to the chord ring by using joinRing() message of ServerActor.  
+* **createChordRing:** This method creates all the nodes in the chord ring as Server com.CHORD.Actors. The number of nodes to be created is specified in the application.conf file. A reference to all the actor nodes created is stored globally. Once they are created, the nodes are added to the chord ring by using joinRing() message of ServerActor.  
 
-* **createUsers:** This method creates User Actors. The number of user actors to be created is specified in application.conf file.
+* **createUsers:** This method creates User com.CHORD.Actors. The number of user actors to be created is specified in application.conf file.
 
 * **getRandomNode:** It returns a randomly chosen node from the list of created nodes.  
 

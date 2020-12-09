@@ -1,8 +1,8 @@
 package Utils
 
-import Actors.ServerActor._
-import Actors.{ServerActor, UserActor}
-import Actors.UserActor._
+import com.CHORD.Actors.ServerActor._
+import com.CHORD.Actors.{ServerActor, UserActor}
+import com.CHORD.Actors.UserActor._
 import akka.actor.{ActorRef, ActorSelection, ActorSystem, Props}
 import akka.pattern.ask
 import akka.util.Timeout
@@ -73,7 +73,7 @@ object SimulationUtils extends LazyLogging {
   }
 
   /**
-   * Create User Actors
+   * Create User com.CHORD.Actors
    * @param system - User actor system
    * @param numUsers - Number of users to be created
    * @return - List of users created

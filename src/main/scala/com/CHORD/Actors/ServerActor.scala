@@ -1,5 +1,5 @@
-package Actors
-import Actors.ServerActor._
+package com.CHORD.Actors
+import com.CHORD.Actors.ServerActor._
 import akka.actor.{Actor, ActorRef}
 import Utils.CommonUtils
 import akka.event.Logging

@@ -1,6 +1,6 @@
 package Utils
 
-import Actors.ServerActor.{SearchNodeToWrite, getDataFromNode, sendValue}
+import com.CHORD.Actors.ServerActor.{SearchNodeToWrite, getDataFromNode, sendValue}
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
