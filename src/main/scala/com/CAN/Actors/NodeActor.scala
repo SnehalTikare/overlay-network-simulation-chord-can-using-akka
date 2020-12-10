@@ -303,6 +303,8 @@ class NodeActor extends Actor with ActorLogging {
     var temp:ActorRef = null
     neighbors.foreach{
       node =>
+        if(node._2.contains(x,y))
+          return node._1
         var dist = distance(x,y,node._2)
       if(dist<=minDistance){
         minDistance = dist

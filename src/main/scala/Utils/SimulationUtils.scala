@@ -6,7 +6,7 @@ import com.CHORD.Actors.UserActor._
 import akka.actor.{ActorRef, ActorSelection, ActorSystem, Props}
 import akka.pattern.ask
 import akka.util.Timeout
-import com.google.gson.{GsonBuilder, JsonArray}
+import com.google.gson.{GsonBuilder, JsonArray, JsonObject}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 
@@ -32,8 +32,8 @@ object SimulationUtils extends LazyLogging {
   val Users = new Array[String](numUsers)
   val userActors = new Array[ActorRef](numUsers)
   val nodeIDList = new ListBuffer[Int]
-  val readreq = new AtomicInteger()
-  val writereq = new AtomicInteger()
+  var readreq:Int = 0
+  var writereq:Int = 0
   implicit val timeout: Timeout = Timeout(10.seconds)
   /**
    *
@@ -63,14 +63,10 @@ object SimulationUtils extends LazyLogging {
     val NodesHashList = new Array[Int](numNodes)
     //val nodeId = random.nextInt(Integer.MAX_VALUE)
     val initialnodeId = 0
-    //val initialNodeHash  = CommonUtils.sha1(initialnodeId.toString) //Get the hash of the node
     NodesHashList(0) = initialnodeId
     nodeIDList+=initialnodeId
     val future = shardRegion ? Envelope(initialnodeId,joinRing(shardRegion,initialnodeId))
     val result = Await.result(future, timeout.duration)
-    //val initialNode = system.actorOf(Props(ServerActor, name = initialNodeHash.toString)
-    //actorNodes(0) = initialNode
-    //actorRefHashMap.put(initialNode,initialNodeHash)
       logger.info("First Node id => " + 0 + "\t\tHashedNodeId => " + initialnodeId)
 
     while(nodeIDList.size<numNodes){
@@ -79,18 +75,7 @@ object SimulationUtils extends LazyLogging {
         {
           val future = shardRegion ? Envelope(nodeId,joinRing(shardRegion, initialnodeId))
           val result = Await.result(future, timeout.duration)
-
-        //val nodeId = "Node_"+x
-//        val nextnodeHash = CommonUtils.sha1(nodeId.toString)
-//        actorNodes(x) = system.actorOf(Props(new ServerActor(nextnodeHash)), name = nextnodeHash.toString)
-//        NodesHashList(x) = nextnodeHash
-//        actorRefHashMap.put(actorNodes(x), nextnodeHash)
         logger.info("Node id => " + nodeId + "\t\tHashedNodeId => " + nodeId)
-//        Thread.sleep(2)
-//        implicit val timeout: Timeout = Timeout(10.seconds)
-//        val future = actorNodes(x) ? joinRing(initialNode, initialNodeHash)
-//        val result = Await.result(future, timeout.duration)
-//        logger.info("Nodes successfully updated after node " + nextnodeHash + " join " + result)
           nodeIDList+=nodeId
         Thread.sleep(100)
       }
@@ -150,16 +135,25 @@ object SimulationUtils extends LazyLogging {
 //          val futureResponse = randomUser ? Write(randomData._1,randomData._2)
 //          val responseString = Await.result(futureResponse, timeout.duration).asInstanceOf[Response]
           val response = Http("http://localhost:8000/ons").timeout(connTimeoutMs = 1000, readTimeoutMs = 10000).params(("key", key), ("value", value)).method("POST").asString
-          writereq.addAndGet(1)
+          writereq+=1
         }
         else{
 //          val futureResponse = randomUser ? Read(randomData._1)
 //          val responseString = Await.result(futureResponse, timeout.duration).asInstanceOf[Response]
           val response: HttpResponse[String] = Http("http://localhost:8000/ons").timeout(connTimeoutMs = 1000, readTimeoutMs = 10000).params(("key", key)).asString
-          readreq.addAndGet(1)
+          readreq+=1
           logger.info(response.toString)
         }
       }
+  }
+  def globalChordRequestState():Unit={
+    val gson = new GsonBuilder().setPrettyPrinting().create()
+    val userState = new JsonObject
+    userState.addProperty("Total Write Requests: ",writereq)
+    userState.addProperty("Total Read Requests: ", readreq)
+    userState.addProperty("Average Read Requests: ", readreq/(readreq+writereq))
+    userState.addProperty("Average Write Requests: ", readreq/(readreq+writereq))
+    writeToFile(gson.toJson(userState),"ChordRequestGlobalState")
   }
 
   /**
