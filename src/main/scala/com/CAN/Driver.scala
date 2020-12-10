@@ -99,49 +99,23 @@ object Driver extends LazyLogging{
     globalState()
     val numberOfRequests = CommonUtils.getRandom(config.getInt("requests.minimum"),
       config.getInt("requests.maximum"))
-    for (i <- 0 to 3) {
+    for (i <- 0 to 6) {
       val randomData = DataUtils.getRandomData
       val isWriteRequest = CommonUtils.generateRandomBoolean()
       val key = randomData._1
       val value = randomData._2
+
       if(isWriteRequest)
       addDataToNode(key,value)
       else
         findMovieRating(key)
     }
-    Thread.sleep(5000)
+    Thread.sleep(3000)
+    val dummyNode = ClusterSharding(clusterActorSystem).shardRegion((numNodes-1).toString)
+    dummyNode ! Envelope(entityIDMap.get(dummyNode), leaveNode(dummyNode))
+    Thread.sleep(3000)
     clusterActorSystem.terminate()
-//    findMovieRating("Inception")
-//    findMovieRating("The Holiday")
-//    findMovieRating("Sherlock")
-//    Thread.sleep(2000)
-//    globalState()
-//    Thread.sleep(2000)
-//    val dummyNode = ClusterSharding(clusterActorSystem).shardRegion("5")
-//    dummyNode ! Envelope(entityIDMap.get(dummyNode), leaveNode(dummyNode))
-//
-//    Thread.sleep(5000)
-//    globalState()
-//    Thread.sleep(5000)
-//    findMovieRating("Inception")
-//    findMovieRating("The Holiday")
-//    findMovieRating("Sherlock")
-    //    val node = createNode(clusterActorSystem,1)
-//    addNodeToNetwork(node)
-//    val node2 = createNode(clusterActorSystem,2)
-//    Thread.sleep(100)
-//    addNodeToNetwork(node2)
-//    Thread.sleep(100)
 
-
-   /* AkkaManagement(clusterActorSystem).start()
-    val orders = ClusterSharding(clusterActorSystem).start(
-      "CAN-Nodes",
-      NodeActor.props(),
-      ClusterShardingSettings(clusterActorSystem),
-      NodeActor.entityIdExtractor,
-      NodeActor.shardIdExtractor
-    )*/
 
   }
 }

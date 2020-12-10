@@ -63,14 +63,10 @@ object SimulationUtils extends LazyLogging {
     val NodesHashList = new Array[Int](numNodes)
     //val nodeId = random.nextInt(Integer.MAX_VALUE)
     val initialnodeId = 0
-    //val initialNodeHash  = CommonUtils.sha1(initialnodeId.toString) //Get the hash of the node
     NodesHashList(0) = initialnodeId
     nodeIDList+=initialnodeId
     val future = shardRegion ? Envelope(initialnodeId,joinRing(shardRegion,initialnodeId))
     val result = Await.result(future, timeout.duration)
-    //val initialNode = system.actorOf(Props(ServerActor, name = initialNodeHash.toString)
-    //actorNodes(0) = initialNode
-    //actorRefHashMap.put(initialNode,initialNodeHash)
       logger.info("First Node id => " + 0 + "\t\tHashedNodeId => " + initialnodeId)
 
     while(nodeIDList.size<numNodes){
@@ -79,18 +75,7 @@ object SimulationUtils extends LazyLogging {
         {
           val future = shardRegion ? Envelope(nodeId,joinRing(shardRegion, initialnodeId))
           val result = Await.result(future, timeout.duration)
-
-        //val nodeId = "Node_"+x
-//        val nextnodeHash = CommonUtils.sha1(nodeId.toString)
-//        actorNodes(x) = system.actorOf(Props(new ServerActor(nextnodeHash)), name = nextnodeHash.toString)
-//        NodesHashList(x) = nextnodeHash
-//        actorRefHashMap.put(actorNodes(x), nextnodeHash)
         logger.info("Node id => " + nodeId + "\t\tHashedNodeId => " + nodeId)
-//        Thread.sleep(2)
-//        implicit val timeout: Timeout = Timeout(10.seconds)
-//        val future = actorNodes(x) ? joinRing(initialNode, initialNodeHash)
-//        val result = Await.result(future, timeout.duration)
-//        logger.info("Nodes successfully updated after node " + nextnodeHash + " join " + result)
           nodeIDList+=nodeId
         Thread.sleep(100)
       }
