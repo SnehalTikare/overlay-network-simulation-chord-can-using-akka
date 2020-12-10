@@ -22,7 +22,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "com.typesafe" % "config" % "1.4.0",
-  "org.cloudsimplus" % "cloudsim-plus" % "5.4.3",
+  //"org.cloudsimplus" % "cloudsim-plus" % "5.4.3",
   "com.novocode" % "junit-interface" % "0.11" % "test",
   "junit" % "junit" % "4.12" % "test",
   "org.scalaj" %% "scalaj-http" % "2.4.2",

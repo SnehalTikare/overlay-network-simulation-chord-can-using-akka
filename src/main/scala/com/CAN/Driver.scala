@@ -89,7 +89,7 @@ object Driver extends LazyLogging{
     writeToFile(gson.toJson(userState),"CANRequestGlobalState")
   }
 
-  def main(args: Array[String]): Unit = {
+  def run(args: Array[String]): Unit = {
     logger.info("Creating Server Actor System")
     val config: Config = ConfigFactory.load()
     val numNodes = config.getInt("Node.count")

@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContextExecutor
 object ChordDriver extends LazyLogging {
   val numNodes: Int = config.getInt("count.nodes")
   val numUsers: Int = config.getInt("count.users")
-  def main(args: Array[String]): Unit = {
+  def run(args: Array[String]): Unit = {
     logger.info("Creating Server Actor System")
     implicit val serverActorSystem= SimulationUtils.createActorSystem("ClusterActorSystem")
     logger.info("Creating Shard Region")

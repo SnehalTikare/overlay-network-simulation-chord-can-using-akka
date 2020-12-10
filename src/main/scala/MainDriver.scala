@@ -2,12 +2,12 @@ object MainDriver {
 
   def main(args: Array[String]): Unit = {
     print("Select your option.\n1. Chord\n2. CAN\n")
-    val option = scala.io.StdIn.readLine()
+    val option = scala.io.StdIn.readInt()
     if(option == 1){
-      ChordDriver.main(null)
+      ChordDriver.run(null)
     }
     else{
-      com.CAN.Driver.main(null)
+      com.CAN.Driver.run(null)
     }
   }
 }
