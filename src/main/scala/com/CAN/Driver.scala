@@ -1,7 +1,7 @@
 package com.CAN
 
 import Utils.{CommonUtils, DataUtils}
-import Utils.SimulationUtils.config
+import Utils.SimulationUtils.{config, writeToFile}
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import akka.pattern.ask
@@ -10,6 +10,7 @@ import com.CAN.Actors.NodeActor
 import com.CAN.Actors.NodeActor._
 import com.CAN.helper.Bootstrap
 import com.CAN.helper.Bootstrap.entityIDMap
+import com.google.gson.{GsonBuilder, JsonObject}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 
@@ -26,7 +27,8 @@ object Driver extends LazyLogging{
   val miny = config.getInt("Node.miny")
   val number_of_nodes = config.getInt("Node.count")
   implicit val timeout: Timeout = Timeout(100.seconds)
-
+  var readrequest = 0
+  var writerequest = 0
   val clusterActorSystem= createActorSystem("ClusterActorSystem")
 
   def createActorSystem(systemName:String):ActorSystem ={
@@ -77,6 +79,15 @@ object Driver extends LazyLogging{
     randomNode ! Envelope(entityIDMap.get(randomNode),findData(key))
   }
 
+  def globalCANRequestState(read:Int, write:Int):Unit={
+    val gson = new GsonBuilder().setPrettyPrinting().create()
+    val userState = new JsonObject
+    userState.addProperty("Total Write Requests: ",write)
+    userState.addProperty("Total Read Requests: ", read)
+    userState.addProperty("Average Read Requests: ", read.toDouble/(read + write).toDouble)
+    userState.addProperty("Average Write Requests: ", write.toDouble/(read + write ).toDouble)
+    writeToFile(gson.toJson(userState),"CANRequestGlobalState")
+  }
 
   def main(args: Array[String]): Unit = {
     logger.info("Creating Server Actor System")
@@ -106,11 +117,18 @@ object Driver extends LazyLogging{
       val value = randomData._2
 
       if(isWriteRequest)
-      addDataToNode(key,value)
-      else
+        {
+          addDataToNode(key,value)
+          writerequest+=1
+        }
+      else {
         findMovieRating(key)
+        readrequest+=1
+      }
     }
     Thread.sleep(3000)
+    globalCANRequestState(readrequest,writerequest)
+    Thread.sleep(1000)
     val dummyNode = ClusterSharding(clusterActorSystem).shardRegion((numNodes-1).toString)
     dummyNode ! Envelope(entityIDMap.get(dummyNode), leaveNode(dummyNode))
     Thread.sleep(3000)
