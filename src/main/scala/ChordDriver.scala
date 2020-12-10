@@ -9,7 +9,7 @@ import com.typesafe.scalalogging.{LazyLogging, Logger}
 import scala.concurrent.ExecutionContextExecutor
 
 
-object Driver extends LazyLogging {
+object ChordDriver extends LazyLogging {
 
   val numNodes: Int = config.getInt("count.nodes")
   val numUsers: Int = config.getInt("count.users")

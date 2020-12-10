@@ -1,4 +1,4 @@
-package Messages
+package com.CHORD.Messages
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 

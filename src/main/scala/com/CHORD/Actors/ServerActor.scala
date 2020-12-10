@@ -1,5 +1,5 @@
 package com.CHORD.Actors
-import Messages.SerializableMessage
+import com.CHORD.Messages.SerializableMessage
 import com.CHORD.Actors.ServerActor._
 import akka.actor.{Actor, ActorRef}
 import Utils.CommonUtils
