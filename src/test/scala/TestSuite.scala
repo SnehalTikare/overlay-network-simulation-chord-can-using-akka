@@ -20,11 +20,11 @@ class TestSuite {
 
 
 
-  @Test
- def testReadCSV : Unit = {
-    val data = DataUtils.readCSV()
-    assertNotNull(data)
-  }
+//  @Test
+// def testReadCSV : Unit = {
+//    val data = DataUtils.readCSV()
+//    assertNotNull(data)
+//  }
 
  @Test
   def testGetRandom : Unit = {
