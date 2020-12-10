@@ -18,20 +18,6 @@ class TestSuite {
    assertEquals(config.getString("akka.actor.provider"), "cluster") }
 
 
-  @Test
-  def testCreateChordRing : Unit = {
-    val system = ActorSystem("ClusterActorSystem")
-    val shardRegion: ActorRef = ClusterSharding(system).start(
-      typeName = "ShardRegion",
-      entityProps = Props[ServerActor](),
-      settings = ClusterShardingSettings(system),
-      extractEntityId = ServerActor.entityIdExtractor,
-      extractShardId = ServerActor.shardIdExtractor)
-    val chordNodeList = SimulationUtils.createChordRing(shardRegion,2)
-    assertNotNull(chordNodeList)
-    assertEquals(chordNodeList.size,2)
-    system.terminate()
- }
 
 
   @Test
@@ -80,6 +66,22 @@ class TestSuite {
   def testCheckRange : Unit = {
     assertTrue(CommonUtils.checkrange(true, 3,3,true,2))
     assertFalse(CommonUtils.checkrange(true,3,4,true,7))
+  }
+
+  @Test
+  def testCreateChordRing : Unit = {
+    val system = ActorSystem("ClusterActorSystem")
+    val shardRegion: ActorRef = ClusterSharding(system).start(
+      typeName = "ShardRegion",
+      entityProps = Props[ServerActor](),
+      settings = ClusterShardingSettings(system),
+      extractEntityId = ServerActor.entityIdExtractor,
+      extractShardId = ServerActor.shardIdExtractor)
+    val chordNodeList = SimulationUtils.createChordRing(shardRegion,2)
+    assertNotNull(chordNodeList)
+    assertEquals(chordNodeList.size,2)
+    system.terminate()
+    Thread.sleep(100)
   }
 }
 
