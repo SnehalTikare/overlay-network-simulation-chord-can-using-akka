@@ -1,8 +1,8 @@
-package Actors
+package ChordPackage.Actors
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import Actors.UserActor._
+import UserActor._
 import akka.actor.Actor
 import com.google.gson.JsonObject
 import scalaj.http.{Http, HttpResponse}
