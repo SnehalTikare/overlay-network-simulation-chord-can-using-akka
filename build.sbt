@@ -1,5 +1,10 @@
 name := "group2-overlaynetworksimulator"
 
+mainClass in (Compile, run) := Some("MainDriver")
+
+mainClass in (Compile, packageBin) := Some("MainDriver")
+
+
 version := "0.1"
 
 scalaVersion := "2.12.12"
