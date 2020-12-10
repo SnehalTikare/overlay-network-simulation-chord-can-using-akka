@@ -1,3 +1,4 @@
+
 name := "group2-overlaynetworksimulator"
 
 mainClass in (Compile, run) := Some("MainDriver")
@@ -8,6 +9,12 @@ mainClass in (Compile, packageBin) := Some("MainDriver")
 version := "0.1"
 
 scalaVersion := "2.12.12"
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case PathList("reference.conf", xs @ _*) => MergeStrategy.concat
+  case x => MergeStrategy.first
+}
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor-typed" % "2.6.10",
