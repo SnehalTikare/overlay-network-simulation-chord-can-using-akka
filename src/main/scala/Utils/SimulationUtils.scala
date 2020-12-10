@@ -14,20 +14,27 @@ import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import org.apache.commons.io.FileUtils
+import scalaj.http.{Http, HttpResponse}
 
-
+import scala.collection.mutable.ListBuffer
 
 object SimulationUtils extends LazyLogging {
   val config: Config = ConfigFactory.load()
   val numUsers: Int = config.getInt("count.users")
+  val numComputers =  config.getInt("count.zero.computers")
   val actorRefHashMap = new mutable.HashMap[ActorRef, Int]()
   val actorNodes = new Array[ActorRef](config.getInt("count.nodes"))
   val random = scala.util.Random
   val Users = new Array[String](numUsers)
   val userActors = new Array[ActorRef](numUsers)
-
+  val nodeIDList = new ListBuffer[Int]
+  val readreq = new AtomicInteger()
+  val writereq = new AtomicInteger()
+  implicit val timeout: Timeout = Timeout(10.seconds)
   /**
    *
    * @param systemName :Name of the actor system to be created
@@ -36,40 +43,59 @@ object SimulationUtils extends LazyLogging {
   def createActorSystem(systemName:String):ActorSystem ={
     ActorSystem(systemName)
   }
+  def createShardRegion(system:ActorSystem):ActorRef={
+      val ShardRegion: ActorRef = ClusterSharding(system).start(
+        typeName = "ShardRegion",
+        entityProps = Props[ServerActor](),
+        settings = ClusterShardingSettings(system),
+        extractEntityId = ServerActor.entityIdExtractor,
+        extractShardId = ServerActor.shardIdExtractor)
+    ShardRegion
+  }
 
   /**
    * Function to create nodes in the Chord ring.
-   * @param system Actor System (Server Actor System)
    * @param numNodes (Number of nodes to be created in the chord
    * @return List of nodes created
    */
 
-  def createChordRing(system:ActorSystem, numNodes : Int):List[Int]={
+  def createChordRing(shardRegion:ActorRef,numNodes : Int):List[Int]={
     val NodesHashList = new Array[Int](numNodes)
     //val nodeId = random.nextInt(Integer.MAX_VALUE)
-    val initialnodeId = "Node_0"
-    val initialNodeHash  = CommonUtils.sha1(initialnodeId.toString) //Get the hash of the node
-    NodesHashList(0) = initialNodeHash
-    val initialNode = system.actorOf(Props(new ServerActor(initialNodeHash)), name = initialNodeHash.toString)
-    actorNodes(0) = initialNode
-    actorRefHashMap.put(initialNode,initialNodeHash)
-    logger.info("First Node id => " + 0 + "\t\tHashedNodeId => " + initialNodeHash)
-    for(x <- 1 until numNodes){
-      //var nodeId = random.nextInt(Integer.MAX_VALUE)
-      val nodeId = "Node_"+x
-      val nextnodeHash = CommonUtils.sha1(nodeId.toString)
-      actorNodes(x) = system.actorOf(Props(new ServerActor(nextnodeHash)), name =nextnodeHash.toString)
-      NodesHashList(x) = nextnodeHash
-      actorRefHashMap.put(actorNodes(x),nextnodeHash)
-      logger.info("Node id => " + x + "\t\tHashedNodeId => " + nextnodeHash)
-      Thread.sleep(2)
-      implicit val timeout: Timeout = Timeout(10.seconds)
-      val future = actorNodes(x) ? joinRing(initialNode,initialNodeHash)
-      val result = Await.result(future, timeout.duration)
-      logger.info("Nodes successfully updated after node "+  nextnodeHash + " join "+ result)
-      Thread.sleep(100)
+    val initialnodeId = 0
+    //val initialNodeHash  = CommonUtils.sha1(initialnodeId.toString) //Get the hash of the node
+    NodesHashList(0) = initialnodeId
+    nodeIDList+=initialnodeId
+    val future = shardRegion ? Envelope(initialnodeId,joinRing(shardRegion,initialnodeId))
+    val result = Await.result(future, timeout.duration)
+    //val initialNode = system.actorOf(Props(ServerActor, name = initialNodeHash.toString)
+    //actorNodes(0) = initialNode
+    //actorRefHashMap.put(initialNode,initialNodeHash)
+      logger.info("First Node id => " + 0 + "\t\tHashedNodeId => " + initialnodeId)
+
+    while(nodeIDList.size<numNodes){
+      val nodeId = random.nextInt(numComputers)
+      if(!nodeIDList.contains(nodeId))
+        {
+          val future = shardRegion ? Envelope(nodeId,joinRing(shardRegion, initialnodeId))
+          val result = Await.result(future, timeout.duration)
+
+        //val nodeId = "Node_"+x
+//        val nextnodeHash = CommonUtils.sha1(nodeId.toString)
+//        actorNodes(x) = system.actorOf(Props(new ServerActor(nextnodeHash)), name = nextnodeHash.toString)
+//        NodesHashList(x) = nextnodeHash
+//        actorRefHashMap.put(actorNodes(x), nextnodeHash)
+        logger.info("Node id => " + nodeId + "\t\tHashedNodeId => " + nodeId)
+//        Thread.sleep(2)
+//        implicit val timeout: Timeout = Timeout(10.seconds)
+//        val future = actorNodes(x) ? joinRing(initialNode, initialNodeHash)
+//        val result = Await.result(future, timeout.duration)
+//        logger.info("Nodes successfully updated after node " + nextnodeHash + " join " + result)
+          nodeIDList+=nodeId
+        Thread.sleep(100)
+      }
     }
-    NodesHashList.toList
+    nodeIDList.toList
   }
 
   /**
@@ -107,28 +133,31 @@ object SimulationUtils extends LazyLogging {
 
   /**
    * The method that generates write and read requests to add/fetch data to/from node
-   * @param users - List of users who generate the requests
-   * @param userActorSystem
-   *
    */
-  def generateRequests(users : List[String], userActorSystem : ActorSystem) : Unit = {
+  def generateRequests() : Unit = {
     implicit val timeout: Timeout = Timeout(1000.seconds)
     val numberOfRequests = CommonUtils.getRandom(config.getInt("requests.minimum"),
       config.getInt("requests.maximum"))
       for (i <- 0 to numberOfRequests) {
-        val randomUser = getRandomUser(userActorSystem, users) //Get a random user
+        //val randomUser = getRandomUser(userActorSystem, users) //Get a random user
         val randomData = DataUtils.getRandomData
         val isWriteRequest = CommonUtils.generateRandomBoolean()
+        val key = randomData._1
+        val value = randomData._2
         logger.info("Request  - {} - isWrite - {} - data - {}", i, isWriteRequest,randomData)
         Thread.sleep(10000)
         if(isWriteRequest){
-          val futureResponse = randomUser ? Write(randomData._1,randomData._2)
-          val responseString = Await.result(futureResponse, timeout.duration).asInstanceOf[Response]
+//          val futureResponse = randomUser ? Write(randomData._1,randomData._2)
+//          val responseString = Await.result(futureResponse, timeout.duration).asInstanceOf[Response]
+          val response = Http("http://localhost:8000/ons").timeout(connTimeoutMs = 1000, readTimeoutMs = 10000).params(("key", key), ("value", value)).method("POST").asString
+          writereq.addAndGet(1)
         }
         else{
-          val futureResponse = randomUser ? Read(randomData._1)
-          val responseString = Await.result(futureResponse, timeout.duration).asInstanceOf[Response]
-          logger.info(responseString.toString)
+//          val futureResponse = randomUser ? Read(randomData._1)
+//          val responseString = Await.result(futureResponse, timeout.duration).asInstanceOf[Response]
+          val response: HttpResponse[String] = Http("http://localhost:8000/ons").timeout(connTimeoutMs = 1000, readTimeoutMs = 10000).params(("key", key)).asString
+          readreq.addAndGet(1)
+          logger.info(response.toString)
         }
       }
   }
@@ -147,12 +176,12 @@ object SimulationUtils extends LazyLogging {
   /**
    * Get the global state of all the nodes in the chord.
    */
-  def getGlobalState():Unit={
+  def getGlobalState(shardRegion:ActorRef):Unit={
     implicit val timeout: Timeout = Timeout(10.seconds)
     val gson = new GsonBuilder().setPrettyPrinting().create()
     val nodestate = new JsonArray()
-    for(node <- actorNodes) {
-      val future = node ? ChordGlobalState(actorRefHashMap)
+    for(node <- nodeIDList) {
+      val future = (shardRegion ? Envelope(node,ChordGlobalState(actorRefHashMap)))
       val result = Await.result(future, timeout.duration).asInstanceOf[GlobalState]
       nodestate.add(result.details)
     }

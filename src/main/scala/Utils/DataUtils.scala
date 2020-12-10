@@ -1,11 +1,11 @@
 package Utils
 
-import com.CHORD.Actors.ServerActor.{SearchNodeToWrite, getDataFromNode, sendValue}
-import akka.actor.ActorSystem
+import com.CHORD.Actors.ServerActor.{Envelope, SearchNodeToWrite, getDataFromNode, sendValue}
+import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
-
+import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
@@ -13,6 +13,7 @@ import scala.util.Random
 object DataUtils extends LazyLogging {
 
   val dataRecords = readCSV()
+  val keyHashMapper= new mutable.HashMap[String,Int]
 
   def readCSV():List[(String, String)]={
     var dataCsv = List[(String, String)]()
@@ -27,17 +28,24 @@ object DataUtils extends LazyLogging {
     dataCsv
   }
 
-  def putDataToChord(serverActorSystem: ActorSystem, chordNodes: List[Int], key: String, value: String): Unit = {
-    val keyHash = CommonUtils.sha1(key)
-    SimulationUtils.getRandomNode(serverActorSystem, chordNodes) ! SearchNodeToWrite(keyHash, key, value)
+  def putDataToChord(shardRegion:ActorRef,serverActorSystem: ActorSystem, chordNodes: List[Int], key: String, value: String): Unit = {
+    //val keyHash = CommonUtils.sha1(key)
+    val keyHash = chordNodes(new Random().nextInt(chordNodes.size))
+    keyHashMapper.put(key,keyHash)
+    val randomServerActor = chordNodes(new Random().nextInt(chordNodes.size))
+    shardRegion ! Envelope(randomServerActor,SearchNodeToWrite(shardRegion,keyHash, key, value))
   }
 
-  def getDataFromChord(serverActorSystem: ActorSystem, chordNodes: List[Int], key: String): String = {
+  def getDataFromChord(shardRegion:ActorRef,serverActorSystem: ActorSystem, chordNodes: List[Int], key: String): String = {
     var response = ""
     logger.info("Trying to get rating for the requested movie")
-    val keyHash = CommonUtils.sha1(key)
+
+    if(keyHashMapper.contains(key)){
+
     implicit val timeout: Timeout = Timeout(100.seconds)
-    val future = SimulationUtils.getRandomNode(serverActorSystem, chordNodes) ? getDataFromNode(keyHash, key)
+    val randomServerActor = chordNodes(new Random().nextInt(chordNodes.size))
+      val keyHash = keyHashMapper(key)
+    val future = shardRegion ? Envelope(randomServerActor,getDataFromNode(shardRegion,keyHash,key))
     val result = Await.result(future, timeout.duration).asInstanceOf[sendValue]
     if (result.value.equals("Movie not found"))
        response = "Requested movie doesn't have rating"
@@ -45,6 +53,11 @@ object DataUtils extends LazyLogging {
        response = "IMDB rating for movie " + key + " is " + result.value
     logger.info("In data utils {} ",response)
     response
+    }
+    else {
+      response = s"Requested movie ${key} doesn't have rating"
+      response
+    }
   }
 
   def getRandomData : (String,String) = {

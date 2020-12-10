@@ -21,12 +21,12 @@ class TestSuite {
     assertEquals(actorSystem.getClass, ActorSystem("Expected").getClass)
   }
 
-  @Test
-  def testCreateChordRing : Unit = {
-    val chordNodes = SimulationUtils.createChordRing(ActorSystem("Test"),2)
-    assertNotNull(chordNodes)
-    assertEquals(chordNodes.size,2)
-  }
+//  @Test
+//  def testCreateChordRing : Unit = {
+//    val chordNodes = SimulationUtils.createChordRing(ActorSystem("Test"),2)
+//    assertNotNull(chordNodes)
+//    assertEquals(chordNodes.size,2)
+//  }
 
   @Test
   def testCreateUsers : Unit = {
