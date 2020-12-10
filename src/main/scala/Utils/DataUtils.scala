@@ -1,7 +1,6 @@
 package Utils
 
 import Actors.ServerActor.{SearchNodeToWrite, getDataFromNode, sendValue}
-import Utils.SimulationUtils.{Envelope, random, serverActorIdMap}
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
@@ -30,8 +29,7 @@ object DataUtils extends LazyLogging {
 
   def putDataToChord(serverActorSystem: ActorSystem, chordNodes: List[Int], key: String, value: String): Unit = {
     val keyHash = CommonUtils.sha1(key)
-    val randomNode = SimulationUtils.getRandomNode(serverActorSystem, chordNodes)
-    randomNode ! Envelope(serverActorIdMap.get(randomNode),SearchNodeToWrite(keyHash, key, value))
+    SimulationUtils.getRandomNode(serverActorSystem, chordNodes) ! SearchNodeToWrite(keyHash, key, value)
   }
 
   def getDataFromChord(serverActorSystem: ActorSystem, chordNodes: List[Int], key: String): String = {
@@ -39,8 +37,7 @@ object DataUtils extends LazyLogging {
     logger.info("Trying to get rating for the requested movie")
     val keyHash = CommonUtils.sha1(key)
     implicit val timeout: Timeout = Timeout(100.seconds)
-    val randomNode = SimulationUtils.getRandomNode(serverActorSystem, chordNodes)
-    val future = randomNode ? Envelope(serverActorIdMap.get(randomNode),getDataFromNode(keyHash, key))
+    val future = SimulationUtils.getRandomNode(serverActorSystem, chordNodes) ? getDataFromNode(keyHash, key)
     val result = Await.result(future, timeout.duration).asInstanceOf[sendValue]
     if (result.value.equals("Movie not found"))
        response = "Requested movie doesn't have rating"
