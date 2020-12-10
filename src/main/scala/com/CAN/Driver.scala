@@ -1,5 +1,7 @@
 package com.CAN
 
+import Utils.{CommonUtils, DataUtils}
+import Utils.SimulationUtils.config
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import akka.pattern.ask
@@ -81,18 +83,7 @@ object Driver extends LazyLogging{
     val config: Config = ConfigFactory.load()
     val numNodes = config.getInt("Node.count")
     //AkkaManagement(clusterActorSystem).start()
-   /* for(i <- 1 to numNodes){
-      var node = createNode(clusterActorSystem,i)
-      addNodeToNetwork(node)
-      //Thread.sleep(1000)
-    }
-    Thread.sleep(3000)
-    globalState()
-    Thread.sleep(3000)
-    addDataToNode("Inception","5")
-    Thread.sleep(1000)
-    findMovieRating("Inception")
-    findMovieRating("The Holiday")
+   /*
     clusterActorSystem.terminate()*/
    for (i <- 1 to numNodes) {
      val nodeRegion: ActorRef = ClusterSharding(clusterActorSystem).start(
@@ -106,8 +97,20 @@ object Driver extends LazyLogging{
     }
     Thread.sleep(1000)
     globalState()
-    addDataToNode("Inception","7.5")
-    addDataToNode("Sherlock","9.2")
+    val numberOfRequests = CommonUtils.getRandom(config.getInt("requests.minimum"),
+      config.getInt("requests.maximum"))
+    for (i <- 0 to 3) {
+      val randomData = DataUtils.getRandomData
+      val isWriteRequest = CommonUtils.generateRandomBoolean()
+      val key = randomData._1
+      val value = randomData._2
+      if(isWriteRequest)
+      addDataToNode(key,value)
+      else
+        findMovieRating(key)
+    }
+    Thread.sleep(5000)
+    clusterActorSystem.terminate()
 //    findMovieRating("Inception")
 //    findMovieRating("The Holiday")
 //    findMovieRating("Sherlock")
