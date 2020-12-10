@@ -18,7 +18,7 @@ object ChordDriver extends LazyLogging {
   def main(args: Array[String]): Unit = {
 
     logger.info("Creating Server Actor System")
-    implicit val serverActorSystem= SimulationUtils.createActorSystem("ServerActorSystem")
+    implicit val serverActorSystem= SimulationUtils.createActorSystem("ClusterActorSystem")
 
     logger.info("Creating Shard Region")
     val shardRegion = SimulationUtils.createShardRegion(serverActorSystem)
