@@ -17,8 +17,12 @@ object DataUtils extends LazyLogging {
 
   def readCSV():List[(String, String)]={
     var dataCsv = List[(String, String)]()
-    val bufferedSource = scala.io.Source.getClass.getResourceAsStream("/IMDB-Movie-Data.csv")//fromFile("src/main/resources/IMDB-Movie-Data.csv")
-    for (line <- scala.io.Source.fromInputStream(bufferedSource).getLines.drop(900)) {
+    //Uncomment this when creating fat jar using sbt assembly
+    //val bufferedSource = scala.io.Source.getClass.getResourceAsStream("/IMDB-Movie-Data.csv")
+    //for (line <- scala.io.Source.fromInputStream(bufferedSource).getLines.drop(900)) {
+    //Comment below two lines when creating fat jar using sbt assembly
+    val bufferedSource =  io.Source.fromFile("src/main/resources/IMDB-Movie-Data.csv")
+    for (line <- bufferedSource.getLines.drop(900)) {
 
       val cols = line.split(",").map(_.trim)
       dataCsv:+=(cols(0),cols(1))

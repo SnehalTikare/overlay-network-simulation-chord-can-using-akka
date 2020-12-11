@@ -1,6 +1,8 @@
-# Homework 3: Simulation of Chord Algorithm using Akka
+# Course Project: Simulation of the Chord and CAN Algorithm using Akka
 ## Overview: 
-In this project, we have implemented Chord algorithm using Akka, an actor-based computational model, to simulate a distributed hash table with a virtual overlay network for distribution of work in a cloud data center.
+In this project, we have implemented the Chord and CAN algorithm using Akka, an actor-based computational model, to simulate a distributed hash table with a virtual overlay network for distribution of work in a cloud data center.
+It is then deployed on AWS which can be seen on this [Part-1](https://youtu.be/mAGU4rDkoHE) and 
+[Part-2](https://youtu.be/qAdJ1JGcTEo) videos on YouTube.
 
 ## Team Members:
 * Rahul Romil Keswani
@@ -30,9 +32,30 @@ Note - If the cloned repository throws 'Class not found exception' after buildin
 * Name the task and choose the classpath
 * run the created sbt task
 
+## Docker:  
+* To create an assembly jar file, enter the command:
+```
+sbt assembly
+```  
+* The docker image is built from the created assembly jar file and pushed to and is hosted on Docker Hub with id:
+```
+sakinamaster/final_project:initial  
+```  
+* To pull this docker image, enter the command:  
+```
+docker pull sakinamaster/final_project:initial
+```  
+* To run this docker image: enter the command:  
+```
+docker run -i sakinamaster/final_project:initial  
+```  
+* A sample showing how to pull the docker image and run:  
+![Docker Run Gif](images/docker_run.gif) 
+
 ## Code Structure and Flow:
+## Chord Implementation: 
 ## Actor package:  
-The Actor package consists of two types of actors used in the system.  
+The Actor package is in com.Chord.Actors. It consists of two types of actors used in the system. 
 ## Server Actor:  
 This class represents each server/node in the Chord ring. Each node in our Chord is an actor and the state of these nodes change as new nodes join. The node is created with state variables such as successor, predecessor, and finger table. All these variables have a node reference to self initially.   
 
@@ -85,24 +108,23 @@ This class has methods to generate hashed value for nodes and keys using SHA1 al
 ## Server: 
 Server class is built using Akka Http dependency. It routes the requests by the users to the nodes and the response from the nodes to the users.
 
-## CAN Package: 
+## CAN Implementation: 
 
-## Actors.NodeActor
+## com.CAN.Actors.NodeActor
 
-This class represents each shard  in the CAN . Each shard  has multiple actors and the state of these nodes change as new nodes join. Each of these are set to a specific co-ordinate as they join. The neighbor tables for each are updated as their are additions and removals of nodes.    
+This class represents each shard  in the CAN. Each shard has multiple actors, and the state of these nodes change as new nodes join. Each of these are set to a specific co-ordinate as they join. The neighbor tables for each are updated as there are additions and removals of nodes.    
 
 The main messages defined on this actor are as follows:    
 
-- **setCoordinates:** The coordinate region is set for the node as they join. They randomly get a coordinated co-ordinates, and then depending on the region, other nodes in the cluster are updated
-- **addData** : Writes data to node in the CAN implementation
-
-* **joinNode:**  Nodes are added here to the cluster once their co-ordinates and neighbor table is determined. 
+* **setCoordinates:** The coordinate region is set for the node as they join. They randomly get a coordinated co-ordinates, and then depending on the region, other nodes in the cluster are updated
+* **addData** : Writes data to node in the CAN implementation  
+* **joinNode:**  Nodes are added here to the cluster once their co-ordinates and neighbor table is determined.   
 * **findZone** : This determines if a node to be added lies within the zone/region of the other node. 
-* **addNeighbor** : This message invokes the logic to add a neighbor to a set of nodes
-* **removeNeighbor** : This message invokes the logic to remove a neighbor from a set of nodes
-* **findData** : Checks if a requested data is in a particular node, else it is forwarded to it's neighbor and so on. 
-* **leaveNode** : Node is removed from the CAN network using this message. The region of the selected node is then merged to some other node. 
-* **updateNeighbors** : The neighbor table for the nodes neighbors are updated. 
+* **addNeighbor** : This message invokes the logic to add a neighbor to a set of nodes  
+* **removeNeighbor** : This message invokes the logic to remove a neighbor from a set of nodes  
+* **findData** : Checks if a requested data is in a particular node, else it is forwarded to it's neighbor and so on.   
+* **leaveNode** : Node is removed from the CAN network using this message. The region of the selected node is then merged to some other node.   
+* **updateNeighbors** : The neighbor table for the nodes neighbors are updated.   
 
 ## Helper.Bootstrap
 
@@ -113,10 +135,12 @@ This class maintains a list of all nodes added to the system. It is also respons
 This class is used by each node to maintain the state of its position in the zone, it's and it's centers. It also contains methods to split a zone, merge a zone, check if a node falls into a specific zone, and a node is  neighbor of any other node. 
 
 
-
 ## Results:  
-**Part of a simulation:**  
-![Simulation1 Image](images/SimulationPic1.png)  
+**Part of Chord simulation:**  
+![Chord Simulation Image](images/SimulationPic1.png)  
+
+**Part of CAN simulation:**
+![CAN Simulation Image](images/SimulationPic2.png)
 
 **Part of a ChordGlobalState:**  
 The below screenshot captures the snapshot of the state of nodes in the chord ring.It captures the details like successor, predecessor and finger-table at the given moment.
@@ -126,8 +150,8 @@ The below screenshot captures the snapshot of the state of nodes in the chord ri
 The below screenshot captures the snapshot of the state of the users. It captures the number of write and read requests made by each user 
 ![User_Global_State Image](images/UserGlobalState.png) 
 
-**AWS Deployment Video link**
-    https://youtu.be/mAGU4rDkoHE - Part 1
-    https://youtu.be/qAdJ1JGcTEo - Part 2
+
+
+
 
 
