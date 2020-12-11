@@ -97,3 +97,8 @@ The below screenshot captures the snapshot of the state of nodes in the chord ri
 The below screenshot captures the snapshot of the state of the users. It captures the number of write and read requests made by each user 
 ![User_Global_State Image](images/UserGlobalState.png) 
 
+**AWS Deployment Video link**
+    https://youtu.be/mAGU4rDkoHE - Part 1
+    https://youtu.be/qAdJ1JGcTEo - Part 2
+
+
