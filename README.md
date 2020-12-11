@@ -1,7 +1,7 @@
 # Course Project: Simulation of the Chord and CAN Algorithm using Akka
 ## Overview: 
 In this project, we have implemented the Chord and CAN algorithm using Akka, an actor-based computational model, to simulate a distributed hash table with a virtual overlay network for distribution of work in a cloud data center.
-It is then deployed on AWS which can be seen on this [Part-1](https://youtu.be/mAGU4rDkoHE) and 
+It is then deployed on AWS which can be seen on [Part-1](https://youtu.be/mAGU4rDkoHE) and 
 [Part-2](https://youtu.be/qAdJ1JGcTEo) videos on YouTube.
 
 ## Team Members:
@@ -149,6 +149,10 @@ The below screenshot captures the snapshot of the state of nodes in the chord ri
 **Part of a UserGlobalState:** 
 The below screenshot captures the snapshot of the state of the users. It captures the number of write and read requests made by each user 
 ![User_Global_State Image](images/UserGlobalState.png) 
+
+## Limitations:  
+* Cannot handle node failures or node leaving the system in Chord.
+* Cannot handle node failures in CAN.
 
 
 
