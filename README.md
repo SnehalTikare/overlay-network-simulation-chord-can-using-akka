@@ -85,6 +85,35 @@ This class has methods to generate hashed value for nodes and keys using SHA1 al
 ## Server: 
 Server class is built using Akka Http dependency. It routes the requests by the users to the nodes and the response from the nodes to the users.
 
+## CAN Package: 
+
+## Actors.NodeActor
+
+This class represents each shard  in the CAN . Each shard  has multiple actors and the state of these nodes change as new nodes join. Each of these are set to a specific co-ordinate as they join. The neighbor tables for each are updated as their are additions and removals of nodes.    
+
+The main messages defined on this actor are as follows:    
+
+- **setCoordinates:** The coordinate region is set for the node as they join. They randomly get a coordinated co-ordinates, and then depending on the region, other nodes in the cluster are updated
+- **addData** : Writes data to node in the CAN implementation
+
+* **joinNode:**  Nodes are added here to the cluster once their co-ordinates and neighbor table is determined. 
+* **findZone** : This determines if a node to be added lies within the zone/region of the other node. 
+* **addNeighbor** : This message invokes the logic to add a neighbor to a set of nodes
+* **removeNeighbor** : This message invokes the logic to remove a neighbor from a set of nodes
+* **findData** : Checks if a requested data is in a particular node, else it is forwarded to it's neighbor and so on. 
+* **leaveNode** : Node is removed from the CAN network using this message. The region of the selected node is then merged to some other node. 
+* **updateNeighbors** : The neighbor table for the nodes neighbors are updated. 
+
+## Helper.Bootstrap
+
+This class maintains a list of all nodes added to the system. It is also responsible for getting any random node for simulation purposes. It is as well as used to get random co-ordinates for any new joining node. 
+
+## Helper.Coordinate
+
+This class is used by each node to maintain the state of its position in the zone, it's and it's centers. It also contains methods to split a zone, merge a zone, check if a node falls into a specific zone, and a node is  neighbor of any other node. 
+
+
+
 ## Results:  
 **Part of a simulation:**  
 ![Simulation1 Image](images/SimulationPic1.png)  
