@@ -58,6 +58,11 @@ docker run -i sakinamaster/final_project:initial
 The Akka HTTP modules implement a full server- and client-side HTTP stack on top of akka-actor and akka-stream.
 We make use of this module to create an endpoint and invoke methods for reading/writing data.
 
+### Cluster Sharding
+"Cluster sharding is useful when you need to distribute actors across several nodes in the cluster and want to be able to interact with them using their logical identifier, but without having to care about their physical location in the cluster, which might also change over time"
+We use cluster sharding to shard the actors which represent nodes in the network.We have considered a single node with multiple shards and entities.
+The entities are represent the node actors.Entity ID and Shard ID is used to communicate between the actors.
+
 ## Chord Implementation: 
 This package implements [Chord: A Scalable Peer-to-peer Lookup Service for Internet Applications](https://pdos.csail.mit.edu/papers/chord:sigcomm01/chord_sigcomm.pdf)
 The actors are sharded in the clusters. Each actor represents an Entity in a Shard.There is a single Shard region with multiple shards.
