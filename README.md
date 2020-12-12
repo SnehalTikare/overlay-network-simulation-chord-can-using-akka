@@ -133,16 +133,16 @@ The zone where the coordinates of the newly arrived node lies, is split either h
 * **addNeighbor** : This message invokes the logic to add a neighbor to a set of nodes  
 * **removeNeighbor** : This message invokes the logic to remove a neighbor from a set of nodes  
 * **findData** : Checks if a requested data is in a particular node, else it is forwarded to it's neighbor and so on.   
-* **leaveNode** : Node is removed from the CAN network using this message. The region of the selected node is then merged to some other node.   
+* **leaveNode** : Node is removed from the CAN network using this message. The region of the selected node is then merged to some other suitable node.   
 * **updateNeighbors** : The neighbor table for the nodes neighbors are updated.   
 
 ## Helper.Bootstrap
 
-This class maintains a list of all nodes added to the system. It is also responsible for getting any random node for simulation purposes. It is as well as used to get random co-ordinates for any new joining node. 
+This class maintains a list of all nodes added to the system. It is responsible for providing with a random node during initialization of new node. 
 
 ## Helper.Coordinate
 
-This class is used by each node to maintain the state of its position in the zone, it's and it's centers. It also contains methods to split a zone, merge a zone, check if a node falls into a specific zone, and a node is  neighbor of any other node. 
+This class is used by each node to maintain the state of its position in the zone and their centers. It also contains methods to split a zone, merge a zone, check if a node falls into a specific zone, and to check if a node is a neighbor of any other node. 
 
 ## Results:  
 **Part of Chord simulation:**  
@@ -155,16 +155,32 @@ This class is used by each node to maintain the state of its position in the zon
 The below screenshot captures the snapshot of the state of nodes in the chord ring.It captures the details like successor, predecessor and finger-table at the given moment.
 ![Chord_Global_State Image](images/ChordGlobal.png) 
 
-**Part of a UserGlobalState:** 
-The below screenshot captures the snapshot of the state of the users. It captures the number of write and read requests made by each user 
-![User_Global_State Image](images/UserGlobalState.png) 
-
 ## Analysis
+**Part of Global Requests state of Chord:** 
+The below screenshot captures the snapshot of the state of the requests. It captures the number of write and read requests made by each user in the Chord implementation.
+![User_Global_State Image](images/ChordRequestState.png) 
+
+**Part of Global Requests state of CAN:** 
+The below screenshot captures the snapshot of the state of the requests. It captures the number of write and read requests made by each user in the CAN implementation.
+![User_Global_State Image](images/CANRequestState.png) 
+
+* Both the algorithms were simulated based on certain pre-defined parameters like Number of nodes, number of read requests to be served per minute.
+The simulations were run for various configuration of these parameters.The above image shows state of the simulation at given instance of time.
+The Chord algorithm took approx, 2 minutes to create the network of 3 nodes and satisfy 13 requests generated during the time of simulation
+where as the CAN implementation took  approx 1 minute to create a network of 3 nodes and satisfy 12 requests generated during the time of simulation.
+#### Chord Protocol
+* The average number of read requests completed per simulation - 0.30
+* The average number of write requests completed per simulation - 0.30
+
+#### CAN Protocol
+* The average number of read requests completed per simulation - 0.58
+* The average number of write requests completed per simulation - 0.41
+
+Thus, overall CAN performs better than Chord.
 
 ## Future Work
-:  
-* Cannot handle node failures or node leaving the system in Chord.
-* Cannot handle node failures in CAN.
+* The current implementation does not handle node leave or failure in Chord
+* The current implementaion of CAN handles only single node failure, next to step would be to handle multiple node failure.
 
 
 

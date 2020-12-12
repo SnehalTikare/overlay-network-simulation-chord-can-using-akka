@@ -151,8 +151,8 @@ object SimulationUtils extends LazyLogging {
     val userState = new JsonObject
     userState.addProperty("Total Write Requests: ",writereq)
     userState.addProperty("Total Read Requests: ", readreq)
-    userState.addProperty("Average Read Requests: ", readreq/(readreq+writereq))
-    userState.addProperty("Average Write Requests: ", readreq/(readreq+writereq))
+    userState.addProperty("Average Read Requests: ", readreq.toDouble/(readreq+writereq))
+    userState.addProperty("Average Write Requests: ", readreq.toDouble/(readreq+writereq))
     writeToFile(gson.toJson(userState),"ChordRequestGlobalState")
   }
 

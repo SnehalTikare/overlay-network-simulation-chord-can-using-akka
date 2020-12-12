@@ -34,6 +34,7 @@ object Driver extends LazyLogging{
   def createActorSystem(systemName:String):ActorSystem ={
     ActorSystem(systemName)
   }
+  //Add nodes to the CAN Network
   def addNodeToNetwork(Id:Int):Unit={
     val node :ActorRef=ClusterSharding(clusterActorSystem).shardRegion(Id.toString)
 
@@ -67,18 +68,19 @@ object Driver extends LazyLogging{
         node => node ! Envelope(entityIDMap.get(node),printState)
       }
   }
+  //Add requested movie to the network
   def addDataToNode(key:String,value:String):Unit={
     val randomNumber =  Bootstrap.getRandomNumber()
     val randomNode:ActorRef=ClusterSharding(clusterActorSystem).shardRegion(randomNumber.toString)
     randomNode ! Envelope(entityIDMap.get(randomNode),storeData(key,value))
   }
-
+//Get Rating for requested movie
   def findMovieRating(key:String):Unit={
     val randomNumber =  Bootstrap.getRandomNumber()
     val randomNode:ActorRef=ClusterSharding(clusterActorSystem).shardRegion(randomNumber.toString)
     randomNode ! Envelope(entityIDMap.get(randomNode),findData(key))
   }
-
+//Get global state of CAN
   def globalCANRequestState(read:Int, write:Int):Unit={
     val gson = new GsonBuilder().setPrettyPrinting().create()
     val userState = new JsonObject
@@ -110,7 +112,7 @@ object Driver extends LazyLogging{
     globalState()
     val numberOfRequests = CommonUtils.getRandom(config.getInt("requests.minimum"),
       config.getInt("requests.maximum"))
-    for (i <- 0 to 6) {
+    for (i <- 0 to numberOfRequests) {
       val randomData = DataUtils.getRandomData
       val isWriteRequest = CommonUtils.generateRandomBoolean()
       val key = randomData._1
