@@ -227,28 +227,7 @@ class NodeActor extends Actor with ActorLogging {
     }
     null
   }
-//  def findNodeZone(x:Double,y:Double,newNode:ActorRef):Boolean={
-//
-//    if(coordinate.contains(x,y))
-//      {
-//        log.info(s" ${newNode.path.name} lies in ${self.path.name}'s zone'")
-//        val new_coord = coordinate.splitZone()
-//        log.info(s"New node's new zone coordinates {}, {}, {}, {}",new_coord.lowerx,new_coord.lowery,new_coord.upperx,new_coord.uppery)
-//        newNode ! setCoordinates(new_coord.lowerx,new_coord.lowery,new_coord.upperx,new_coord.uppery)
-//        //Bootstrap.addNodeToList(newNode)
-//        Thread.sleep(10)
-//        updateNeighbors(new_coord,newNode)
-//
-//        return true
-//
-//      }
-//      else{
-//      log.info(s"Finding closest neighbor of  ${newNode.path.name} in ${self.path.name}'s list'")
-//          var closestNeighbor = nearestNeighbors(x,y,newNode)
-//          closestNeighbor ! joinNode(x,y,newNode)
-//    }
-//    return false
-//  }
+
 
   def updateNeighbors(newCoordinates:Coordinate,newNode:ActorRef):Unit={
     log.info(s"Adding ${newNode.path.name} as a neighbor to ${self.path.name} updateNeighbors Function")
@@ -297,7 +276,7 @@ class NodeActor extends Actor with ActorLogging {
     (1 until key.length by 2 ).map(i => sum+=key(i))
     sum % maxy
   }
-
+  //Find the nearest neighbor for a given point
   def nearestNeighbors(x:Double,y:Double):ActorRef={
     var minDistance = Double.MaxValue
     var temp:ActorRef = null
@@ -314,6 +293,7 @@ class NodeActor extends Actor with ActorLogging {
     //log.info(s"Nearest neighbor from ${self.path.name}'s list to ${newNode.path.name} is ${temp.path.name}")
     temp
   }
+  //distance between two points 
   def distance(x:Double,y:Double,coordinate: Coordinate):Double={
     Math.sqrt(Math.pow((coordinate.centery - y ),2) + Math.pow((coordinate.centerx - x),2))
   }
