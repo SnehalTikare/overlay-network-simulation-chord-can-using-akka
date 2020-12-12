@@ -1,9 +1,10 @@
 # Course Project: Simulation of the Chord and CAN Algorithm using Akka
 ## Overview: 
 In this project, we have implemented the Chord and CAN algorithm using Akka, an actor-based computational model, to simulate a distributed hash table with a virtual overlay network for distribution of work in a cloud data center.
-It is then deployed on AWS which can be seen on [Part-1](https://youtu.be/mAGU4rDkoHE) and 
+The project is deployed on AWS using a Docker image.The instructions for which can be found at  [Part-1](https://youtu.be/mAGU4rDkoHE) and 
 [Part-2](https://youtu.be/qAdJ1JGcTEo) videos on YouTube.
 
+We use REST API to send requests to server for adding and reading the data across the over lay network.
 ## Team Members:
 * Rahul Romil Keswani
 * Snehal Tikare (Team Leader)
@@ -54,8 +55,12 @@ docker run -i sakinamaster/final_project:initial
 
 ## Code Structure and Flow:
 ## Chord Implementation: 
+This package implements [Chord: A Scalable Peer-to-peer Lookup Service for Internet Applications](https://pdos.csail.mit.edu/papers/chord:sigcomm01/chord_sigcomm.pdf)
+The actors are sharded in the clusters. Each actor represents an Entity in a Shard.There is a single Shard region with multiple shards.
+Actors communicate via Envelopes using the Entity ID. The Shard ID on which the actor resides is extracted from entity ID.
 ## Actor package:  
-The Actor package is in com.Chord.Actors. It consists of two types of actors used in the system. 
+The Actor package is in com.Chord.Actors. It consists of two types of actors used in the system.
+
 ## Server Actor:  
 This class represents each server/node in the Chord ring. Each node in our Chord is an actor and the state of these nodes change as new nodes join. The node is created with state variables such as successor, predecessor, and finger table. All these variables have a node reference to self initially.   
 
@@ -75,6 +80,7 @@ The main messages defined on this actor are as follows:
 
 ## User Actor: 
 This class depicts a user who queries a database that is hosted in a data center. It has two state variables: readReq and writeReq. 
+The user actors uses Akka Http to invoke methods using the endpoints exposed by the server.
 
 The main messages defined on this actor are as follows:
 
@@ -109,14 +115,18 @@ This class has methods to generate hashed value for nodes and keys using SHA1 al
 Server class is built using Akka Http dependency. It routes the requests by the users to the nodes and the response from the nodes to the users.
 
 ## CAN Implementation: 
+In this package, we implement the [Content Addresseable Network (CAN)](https://people.eecs.berkeley.edu/~sylvia/papers/cans.pdf)
+The CAN algorithm uses a d-dimensional space to allocate zones for nodes.We have considered a 2D space and assigned zones to a node based on their coordinates.
 
 ## com.CAN.Actors.NodeActor
-
-This class represents each shard  in the CAN. Each shard has multiple actors, and the state of these nodes change as new nodes join. Each of these are set to a specific co-ordinate as they join. The neighbor tables for each are updated as there are additions and removals of nodes.    
+This class represents each entity in a shard in a cluster.There is a single cluster and multiple shard region.
+Each shard has multiple actors, and the state of these nodes change as new nodes join. Each of these are set to a specific co-ordinate as they join. 
+The neighbor tables for each are updated as there are additions and removals of nodes.When a node leaves the network, the data stored at that node is transferred to the node which occupies the zone previously occupied by the failed node.  
 
 The main messages defined on this actor are as follows:    
 
-* **setCoordinates:** The coordinate region is set for the node as they join. They randomly get a coordinated co-ordinates, and then depending on the region, other nodes in the cluster are updated
+* **setCoordinates:** The coordinate region is set for the node as they join.Initially, random coordinates are assigned to nodes. Using a Bootstrap node, a random node already in the network is used to assign a zone to the newly joined node.
+The zone where the coordinates of the newly arrived node lies, is split either horizontally or vertically and one of the split zone is assigned to newly joined node.
 * **addData** : Writes data to node in the CAN implementation  
 * **joinNode:**  Nodes are added here to the cluster once their co-ordinates and neighbor table is determined.   
 * **findZone** : This determines if a node to be added lies within the zone/region of the other node. 
@@ -134,7 +144,6 @@ This class maintains a list of all nodes added to the system. It is also respons
 
 This class is used by each node to maintain the state of its position in the zone, it's and it's centers. It also contains methods to split a zone, merge a zone, check if a node falls into a specific zone, and a node is  neighbor of any other node. 
 
-
 ## Results:  
 **Part of Chord simulation:**  
 ![Chord Simulation Image](images/SimulationPic1.png)  
@@ -150,7 +159,10 @@ The below screenshot captures the snapshot of the state of nodes in the chord ri
 The below screenshot captures the snapshot of the state of the users. It captures the number of write and read requests made by each user 
 ![User_Global_State Image](images/UserGlobalState.png) 
 
-## Limitations:  
+## Analysis
+
+## Future Work
+:  
 * Cannot handle node failures or node leaving the system in Chord.
 * Cannot handle node failures in CAN.
 
