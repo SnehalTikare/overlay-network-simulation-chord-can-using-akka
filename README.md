@@ -4,7 +4,6 @@ In this project, we have implemented the Chord and CAN algorithm using Akka, an 
 The project is deployed on AWS using a Docker image.The instructions for which can be found at  [Part-1](https://youtu.be/mAGU4rDkoHE) and 
 [Part-2](https://youtu.be/qAdJ1JGcTEo) videos on YouTube.
 
-We use REST API to send requests to server for adding and reading the data across the over lay network.
 ## Team Members:
 * Rahul Romil Keswani
 * Snehal Tikare (Team Leader)
@@ -54,6 +53,11 @@ docker run -i sakinamaster/final_project:initial
 ![Docker Run Gif](images/docker_run.gif) 
 
 ## Code Structure and Flow:
+
+### Akka-Http
+The Akka HTTP modules implement a full server- and client-side HTTP stack on top of akka-actor and akka-stream.
+We make use of this module to create an endpoint and invoke methods for reading/writing data.
+
 ## Chord Implementation: 
 This package implements [Chord: A Scalable Peer-to-peer Lookup Service for Internet Applications](https://pdos.csail.mit.edu/papers/chord:sigcomm01/chord_sigcomm.pdf)
 The actors are sharded in the clusters. Each actor represents an Entity in a Shard.There is a single Shard region with multiple shards.
@@ -164,10 +168,11 @@ The below screenshot captures the snapshot of the state of the requests. It capt
 The below screenshot captures the snapshot of the state of the requests. It captures the number of write and read requests made by each user in the CAN implementation.
 ![User_Global_State Image](images/CANRequestState.png) 
 
-* Both the algorithms were simulated based on certain pre-defined parameters like Number of nodes, number of read requests to be served per minute.
+* Both the algorithms were simulated based on certain pre-defined parameters like Number of nodes, number of read/write requests to be served per minute.
 The simulations were run for various configuration of these parameters.The above image shows state of the simulation at given instance of time.
 The Chord algorithm took approx, 2 minutes to create the network of 3 nodes and satisfy 13 requests generated during the time of simulation
 where as the CAN implementation took  approx 1 minute to create a network of 3 nodes and satisfy 12 requests generated during the time of simulation.
+Various such simulations were performed different parameter configuration.Below were the average statistic generated
 #### Chord Protocol
 * The average number of read requests completed per simulation - 0.30
 * The average number of write requests completed per simulation - 0.30
@@ -176,11 +181,11 @@ where as the CAN implementation took  approx 1 minute to create a network of 3 n
 * The average number of read requests completed per simulation - 0.58
 * The average number of write requests completed per simulation - 0.41
 
-Thus, overall CAN performs better than Chord.
+Thus,overall CAN performs better than Chord.The Chord implementation takes more time than CAN to setup the initial overlay network.And is resilient than CAN to serve requests.
 
 ## Future Work
 * The current implementation does not handle node leave or failure in Chord
-* The current implementaion of CAN handles only single node failure, next to step would be to handle multiple node failure.
+* The current implementaion of CAN handles only single node failure, next to step would be to handle multiple node failures.
 
 
 
