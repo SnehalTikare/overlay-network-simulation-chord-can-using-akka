@@ -9,4 +9,8 @@ Comments:
 +3% for a clear documentation with explanation about your implementation
 and how to execute your program.
 
+---
+
+Good job on your simulations. Your grade for the project is 20%.
+
 Abhijeet Mohanty
